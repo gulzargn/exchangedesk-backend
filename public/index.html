@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#060810">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>ExchangeDesk - Mobile App</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  
+  <link rel="manifest" href="manifest.json">
+  <script src="js/tailwind.cdn.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+            },
+            desk: {
+              950: '#060810',
+              900: '#0a0e1a',
+              850: '#0f1424',
+              800: '#151c30',
+              700: '#1e2844',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/socket.io.min.js"></script>
+</head>
+<body class="bg-[#060810] text-slate-100 w-full h-[100dvh] overflow-hidden select-none">
+
+  <!-- ==================================================================== -->
+  <!-- 0. PREMIUM NATIVE APP OPENING SPLASH ANIMATION -->
+  <!-- ==================================================================== -->
+  <div id="appSplashScreen" class="fixed inset-0 z-[100] bg-[#060810] flex flex-col items-center justify-center select-none overflow-hidden transition-all duration-700 ease-out">
+    
+    <!-- Ambient Background Glow Spheres -->
+    <div class="absolute w-72 h-72 rounded-full bg-blue-600/15 blur-3xl -top-10 -left-10 animate-pulse pointer-events-none"></div>
+    <div class="absolute w-80 h-80 rounded-full bg-amber-500/10 blur-3xl -bottom-10 -right-10 animate-pulse pointer-events-none" style="animation-delay: 0.5s"></div>
+
+    <div class="relative z-10 flex flex-col items-center text-center space-y-4 px-6 animate-splash-content">
+      
+      <!-- Glowing Logo Container with Halo Ring -->
+      <div class="relative flex items-center justify-center">
+        <!-- Animated Rotating Glowing Ring -->
+        <div class="absolute -inset-3 rounded-3xl bg-gradient-to-tr from-blue-500 via-emerald-400 to-amber-500 opacity-60 blur-md animate-spin-slow"></div>
+        <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-[#091124] p-1.5 border border-blue-400/40 shadow-2xl shadow-blue-500/30 flex items-center justify-center">
+          <img src="logo.png" alt="ExchangeDesk" class="w-full h-full object-contain rounded-2xl drop-shadow-xl animate-logo-pop">
+        </div>
+      </div>
+
+      <!-- App Title & Tagline -->
+      <div class="space-y-1 pt-1">
+        <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300 tracking-tight leading-none drop-shadow">
+          ExchangeDesk
+        </h1>
+        <p class="text-xs font-semibold text-emerald-400/90 tracking-wide flex items-center justify-center gap-1.5 mt-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>10-Minute Rapid Valuation Engine</span>
+        </p>
+      </div>
+
+      <!-- Sleek Bottom Loading Line -->
+      <div class="w-44 h-1 bg-slate-800/80 rounded-full overflow-hidden mt-6 p-0.5 border border-slate-700/50">
+        <div id="splashProgressBar" class="h-full bg-gradient-to-r from-blue-500 via-emerald-400 to-teal-300 rounded-full animate-splash-beam"></div>
+      </div>
+
+      <div class="text-[10px] text-slate-500 font-bold uppercase tracking-widest pt-1">
+        Sub-Dealer Exchange Platform
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ==================================================================== -->
+  <!-- 1. FULL-SCREEN NATIVE ONBOARDING & GATEKEEPER SCREEN -->
+  <!-- ==================================================================== -->
+  <div id="authGateScreen" class="fixed inset-0 z-50 bg-[#060810] flex flex-col justify-between overflow-y-auto px-4 py-5 safe-area-top safe-area-bottom w-full h-[100dvh] mobile-scroll hidden">
+    
+    <!-- Top Branding & Status -->
+    <div class="space-y-4 pt-2">
+      <!-- Status Pill -->
+      <div class="flex items-center justify-between">
+        <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>10-Minute Rapid Flash Engine</span>
+        </div>
+        <span class="text-[11px] font-bold text-slate-500">v2.5 Production</span>
+      </div>
+
+      <!-- App Emblem & Title -->
+      <div class="flex items-center space-x-3.5 pt-2">
+        <img src="logo.png" alt="ExchangeDesk Logo" class="w-14 h-14 rounded-2xl object-contain shadow-xl shadow-blue-500/25 border border-blue-500/30 bg-[#091124] shrink-0">
+        <div>
+          <h1 class="text-2xl font-black text-white tracking-tight leading-none">ExchangeDesk</h1>
+          <p class="text-xs text-slate-400 font-medium mt-1">Direct Two-Wheeler Exchange App</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Auth Form Card -->
+    <div class="my-auto py-4 space-y-4">
+      
+      <!-- Native Role Segmented Switch -->
+      <div class="grid grid-cols-2 p-1 rounded-2xl bg-[#0d1222] border border-slate-800 text-xs font-bold">
+        <button id="gateTabBuyer" class="py-2.5 rounded-xl font-black transition bg-emerald-500 text-slate-950 shadow-md flex items-center justify-center gap-1.5 mobile-tap">
+          <span>🏍️</span>
+          <span>Buyer Desk</span>
+        </button>
+        <button id="gateTabShowroom" class="py-2.5 rounded-xl font-black transition text-slate-400 hover:text-white flex items-center justify-center gap-1.5 mobile-tap">
+          <span>🏷️</span>
+          <span>Seller Desk</span>
+        </button>
+      </div>
+
+      <!-- SECTION A: BUYER GATE -->
+      <div id="gateBuyerSection" class="space-y-4">
+        
+        <!-- Sub Mode Toggle (Login vs Register) -->
+        <div class="flex rounded-xl bg-[#0a0e1c] p-1 border border-slate-800/80 text-xs">
+          <button id="btnBuyerModeLogin" class="flex-1 py-1.5 rounded-lg font-bold text-emerald-400 bg-slate-900 shadow">
+            Sign In
+          </button>
+          <button id="btnBuyerModeRegister" class="flex-1 py-1.5 rounded-lg font-bold text-slate-400 hover:text-white">
+            + New Account
+          </button>
+        </div>
+
+        <!-- Buyer Login Form -->
+        <form id="formBuyerLogin" class="space-y-3.5 text-xs">
+          <div>
+            <label class="block text-slate-300 font-bold mb-1.5">Registered Mobile Number</label>
+            <div class="relative flex items-center">
+              <span class="absolute left-3.5 text-slate-400 font-bold font-mono-numbers">+91</span>
+              <input type="tel" id="inputBuyerLoginPhone" inputmode="tel" required placeholder="Enter 10-digit number" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-2xl pl-12 pr-4 py-3 text-white outline-none focus:ring-2 focus:ring-emerald-500 font-mono-numbers">
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1.5">4-Digit Security PIN</label>
+            <input type="password" id="inputBuyerLoginPin" inputmode="numeric" required maxlength="8" placeholder="••••" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-2xl px-4 py-3 text-white outline-none focus:ring-2 focus:ring-emerald-500 font-mono-numbers tracking-widest text-base">
+          </div>
+          <button type="submit" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/20 active:scale-95 transition mobile-tap flex items-center justify-center gap-2">
+            <span>Enter Buyer Bidding Desk</span>
+            <span>→</span>
+          </button>
+        </form>
+
+        <!-- Buyer Register Form (Hidden by default) -->
+        <form id="formBuyerRegister" class="space-y-3 text-xs hidden">
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Trading Firm / Business Name</label>
+            <input type="text" id="inputBuyerRegName" required placeholder="e.g. Apex Two-Wheelers" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-2xl px-3.5 py-2.5 text-white outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Mobile Number</label>
+            <div class="relative flex items-center">
+              <span class="absolute left-3.5 text-slate-400 font-bold font-mono-numbers">+91</span>
+              <input type="tel" id="inputBuyerRegPhone" inputmode="tel" required placeholder="10-digit mobile number" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-2xl pl-12 pr-3.5 py-2.5 text-white outline-none focus:ring-2 focus:ring-emerald-500 font-mono-numbers">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-300 font-bold mb-1">Create PIN</label>
+              <input type="password" id="inputBuyerRegPin" inputmode="numeric" required maxlength="8" placeholder="4-digit" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-2xl px-3 py-2.5 text-white outline-none font-mono-numbers text-center">
+            </div>
+            <div>
+              <label class="block text-slate-300 font-bold mb-1">Initial Deposit (₹)</label>
+              <input type="number" id="inputBuyerRegDeposit" inputmode="numeric" required min="3000" step="500" value="3000" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-2xl px-3 py-2.5 text-white outline-none font-mono-numbers text-center">
+            </div>
+          </div>
+          <p class="text-[11px] text-slate-400">Min ₹3,000 wallet threshold required to place binding bids.</p>
+          <button type="submit" class="w-full py-3.5 rounded-2xl bg-emerald-500 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 active:scale-95 transition mobile-tap">
+            Submit Registration for Exchange Desk Approval
+          </button>
+        </form>
+
+      </div>
+
+      <!-- SECTION B: SELLER GATE -->
+      <div id="gateShowroomSection" class="space-y-4 hidden">
+        
+        <!-- Sub Mode Toggle -->
+        <div class="flex rounded-xl bg-[#0a0e1c] p-1 border border-slate-800/80 text-xs">
+          <button id="btnShowroomModeLogin" class="flex-1 py-1.5 rounded-lg font-bold text-blue-400 bg-slate-900 shadow">
+            Seller Login
+          </button>
+          <button id="btnShowroomModeRegister" class="flex-1 py-1.5 rounded-lg font-bold text-slate-400 hover:text-white">
+            + Register Seller
+          </button>
+        </div>
+
+        <!-- Seller Login Form -->
+        <form id="formShowroomLogin" class="space-y-3.5 text-xs">
+          <div>
+            <label class="block text-slate-300 font-bold mb-1.5">Registered Seller Mobile</label>
+            <div class="relative flex items-center">
+              <span class="absolute left-3.5 text-slate-400 font-bold font-mono-numbers">+91</span>
+              <input type="tel" id="inputShowroomLoginPhone" inputmode="tel" required placeholder="Enter 10-digit number" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-2xl pl-12 pr-4 py-3 text-white outline-none focus:ring-2 focus:ring-blue-500 font-mono-numbers">
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1.5">Seller Security PIN</label>
+            <input type="password" id="inputShowroomLoginPin" inputmode="numeric" required maxlength="8" placeholder="••••" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-2xl px-4 py-3 text-white outline-none focus:ring-2 focus:ring-blue-500 font-mono-numbers tracking-widest text-base">
+          </div>
+          <button type="submit" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-500 text-white font-black text-sm shadow-lg shadow-blue-500/20 active:scale-95 transition mobile-tap flex items-center justify-center gap-2">
+            <span>Enter Seller Live Desk</span>
+            <span>→</span>
+          </button>
+        </form>
+
+        <!-- Seller Register Form (Hidden by default) -->
+        <form id="formShowroomRegister" class="space-y-3 text-xs hidden">
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Seller / Business Name</label>
+            <input type="text" id="inputShowroomRegName" required placeholder="e.g. Apex Two-Wheelers" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-2xl px-3.5 py-2.5 text-white outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Contact Phone</label>
+            <div class="relative flex items-center">
+              <span class="absolute left-3.5 text-slate-400 font-bold font-mono-numbers">+91</span>
+              <input type="tel" id="inputShowroomRegPhone" inputmode="tel" required placeholder="10-digit mobile number" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-2xl pl-12 pr-3.5 py-2.5 text-white outline-none focus:ring-2 focus:ring-blue-500 font-mono-numbers">
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Seller Address / Location</label>
+            <textarea id="inputShowroomRegAddress" required rows="2" placeholder="Full seller shop/counter address" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-2xl px-3.5 py-2 text-white outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Create PIN</label>
+            <input type="password" id="inputShowroomRegPin" inputmode="numeric" required maxlength="8" placeholder="4-digit PIN" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-2xl px-3 py-2.5 text-white outline-none font-mono-numbers">
+          </div>
+          <button type="submit" class="w-full py-3.5 rounded-2xl bg-blue-600 text-white font-black text-xs shadow-lg shadow-blue-500/20 active:scale-95 transition mobile-tap">
+            Register Seller & Submit for Activation
+          </button>
+        </form>
+
+      </div>
+
+    </div>
+
+    <!-- Login Footer: Version & Check Update Button -->
+    <div class="pt-3 pb-2 text-center flex items-center justify-center gap-2">
+      <button type="button" id="btnCheckUpdateLogin" class="text-[11px] text-slate-400 hover:text-emerald-400 font-bold flex items-center gap-1.5 transition mobile-tap px-3 py-1 rounded-full bg-slate-900/60 border border-slate-800">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+        <span>ExchangeDesk v2.2</span>
+        <span class="text-slate-600">•</span>
+        <span class="text-emerald-400 underline">Check Updates</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ==================================================================== -->
+  <!-- 2. NATIVE MOBILE APP SHELL (EDGE-TO-EDGE, ZERO BROWSER CONTAINER) -->
+  <!-- ==================================================================== -->
+  <div id="appFrameWrapper" class="fixed inset-0 w-full h-[100dvh] flex flex-col bg-[#060810] overflow-hidden select-none">
+    
+    <div id="appContainer" class="w-full h-full flex-1 flex flex-col overflow-hidden bg-[#060810] relative">
+      
+      <!-- Top Native App Bar -->
+      <header class="flex-shrink-0 z-40 bg-[#0a0e1a]/98 backdrop-blur-md border-b border-slate-800/80 px-2.5 pb-2 pt-2 flex items-center justify-between safe-area-top gap-1.5 overflow-hidden w-full">
+        
+        <!-- Left: User Identity Badge -->
+        <div class="flex items-center space-x-2 min-w-0 flex-1">
+          <img src="logo.png" alt="ExchangeDesk" class="w-8 h-8 rounded-xl object-contain bg-[#0a1226] border border-blue-500/30 shadow-md shadow-blue-500/20 flex-shrink-0">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center space-x-1.5 flex-nowrap">
+              <span id="activeRoleBadge" class="flex-shrink-0 px-2 py-0.5 text-[9px] font-black uppercase rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                BUYER APP
+              </span>
+              <div id="headerUserInfo" class="flex items-center space-x-1 min-w-0 overflow-hidden">
+                <span id="headerUserIcon" class="text-xs flex-shrink-0">🏍️</span>
+                <span id="headerUserName" class="text-xs font-black text-white max-w-[85px] xs:max-w-[120px] truncate">User</span>
+              </div>
+            </div>
+            <div class="text-[9px] text-slate-400 flex items-center gap-1 mt-0.5 truncate">
+              <span id="socketDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping flex-shrink-0"></span>
+              <span id="socketStatusText" class="font-bold truncate">10-Min Flash Engine</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Action Controls (High-contrast, Large Mobile Buttons - Zero Cutoff) -->
+        <div class="flex items-center space-x-1.5 flex-shrink-0">
+          <!-- Update Available Pill (Auto-shown when update exists) -->
+          <button id="btnHeaderUpdatePill" class="hidden h-8 px-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/60 text-amber-300 font-bold flex items-center gap-1 shadow-sm active:scale-95 transition mobile-tap flex-shrink-0 animate-pulse" title="New Update Available">
+            <span class="text-xs">🚀</span>
+            <span class="text-[9px] font-black uppercase tracking-wider text-amber-300">Update</span>
+          </button>
+
+          <!-- Audio Toggle Button -->
+          <button id="btnAudioToggle" title="Audio Chimes" class="h-8 px-2 rounded-xl bg-[#12182c] border border-emerald-500/40 text-emerald-400 flex items-center gap-1 shadow-sm active:scale-95 transition mobile-tap flex-shrink-0" aria-label="Toggle Sound">
+            <svg id="iconAudioOn" class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            </svg>
+            <svg id="iconAudioOff" class="w-3.5 h-3.5 text-slate-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+            </svg>
+            <span class="text-[9px] font-black uppercase tracking-wider text-emerald-400">Sound</span>
+          </button>
+
+          <!-- Logout Button -->
+          <button id="btnHeaderLogout" class="h-8 px-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-400 font-bold flex items-center gap-1 shadow-sm active:scale-95 transition mobile-tap flex-shrink-0" title="Exit / Logout">
+            <svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+            <span class="text-[9px] font-black uppercase tracking-wider text-red-300">Exit</span>
+          </button>
+        </div>
+
+      </header>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 1: 🏍️ BUYER MOBILE APP -->
+      <!-- ============================================================== -->
+      <section id="viewBuyer" class="flex-1 overflow-y-auto overscroll-contain min-h-0 px-3 py-3 space-y-3 pb-24 mobile-scroll">
+        
+        <!-- Buyer Profile Bar & Wallet Card -->
+        <div id="buyerWalletCard" class="mobile-card p-3.5 rounded-2xl space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span id="buyerAccountName" class="font-black text-white text-xs truncate max-w-[200px]">Trading Account</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              ✓ Verified Trader
+            </span>
+          </div>
+
+          <!-- Pre-Funded Wallet Quick Card -->
+          <div class="bg-gradient-to-r from-[#0d1626] to-[#070b14] p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+            <div>
+              <div class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Trading Wallet Balance</div>
+              <div id="buyerWalletDisplay" class="text-2xl font-black font-mono-numbers text-emerald-400 mt-0.5">₹0.00</div>
+              <div class="text-[9px] text-slate-500">Min ₹3,000 threshold required to place bids</div>
+            </div>
+            <button id="btnTopupWallet" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs shadow-md shadow-emerald-500/25 active:scale-95 transition mobile-tap flex items-center gap-1.5">
+              <span>+ Deposit</span>
+            </button>
+          </div>
+
+          <!-- Pending Wallet Deposit Requests Card for Buyer -->
+          <div id="buyerPendingDepositsCard" class="hidden p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-2">
+            <div class="flex items-center justify-between text-xs font-bold text-amber-300">
+              <span class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                Pending Exchange Desk Approvals (<span id="buyerPendingDepositsCount">0</span>)
+              </span>
+              <span class="text-[9px] text-slate-400">Processing UTR</span>
+            </div>
+            <div id="buyerPendingDepositsList" class="space-y-1.5 text-xs">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Pre-Funded Wallet Alert (Conditional) -->
+        <div id="walletRuleAlert" class="hidden p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start space-x-2">
+          <svg class="w-4 h-4 text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div>
+            <strong class="font-bold">Pre-Funded Wallet Threshold:</strong> Balance is below <strong>₹3,000</strong>. Tap "+ Deposit" to place binding bids.
+          </div>
+        </div>
+
+        <!-- Trust Badges Strip -->
+        <div class="flex items-center justify-between bg-[#0b101e] px-3.5 py-2 rounded-xl border border-slate-800/80 text-[10px] text-slate-400">
+          <span class="flex items-center gap-1.5 text-slate-300 font-bold">
+            <span class="text-blue-400">🔒</span> Masked RC Protection
+          </span>
+          <span class="text-slate-600">•</span>
+          <span class="flex items-center gap-1.5 text-emerald-400 font-bold">
+            <span>⚡</span> 10-Min Flash Engine
+          </span>
+          <span class="text-slate-600">•</span>
+          <span class="flex items-center gap-1.5 text-amber-300 font-bold">
+            <span>🛡️</span> Verified Inspection
+          </span>
+        </div>
+
+        <!-- Live Flash Auction Stream -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between px-0.5">
+            <h2 class="text-sm font-black text-white flex items-center gap-2">
+              <span>Live Flash Auctions</span>
+              <span id="buyerActiveCount" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400 font-mono-numbers font-bold">0</span>
+            </h2>
+            <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Rapid Clock
+            </span>
+          </div>
+
+          <!-- Cards Feed -->
+          <div id="buyerAuctionsContainer" class="space-y-3">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 2: 🏷️ SELLER MOBILE DESK -->
+      <!-- ============================================================== -->
+      <section id="viewShowroom" class="flex-1 overflow-y-auto overscroll-contain min-h-0 px-3 py-3 space-y-3.5 pb-24 hidden mobile-scroll">
+        
+        <!-- Seller Counter Bar -->
+        <div class="mobile-card p-3.5 rounded-2xl flex items-center justify-between">
+          <div class="flex items-center space-x-2.5">
+            <span class="p-2 rounded-xl bg-blue-500/15 text-blue-400 text-base">🏷️</span>
+            <div>
+              <div id="showroomAccountName" class="font-black text-white text-xs">Seller Counter</div>
+              <div class="text-[10px] text-slate-400">Authorized Seller Desk</div>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase bg-blue-500/15 text-blue-400 border border-blue-500/30">
+            SELLER APP
+          </span>
+        </div>
+
+        <!-- Mobile Segmented Tabs for Seller: Live Deals vs Post Bike -->
+        <div class="grid grid-cols-2 gap-1.5 bg-[#0a0e1c] p-1 rounded-2xl border border-slate-800 text-xs">
+          <button id="btnShowroomTabDeals" class="py-2.5 rounded-xl font-black transition bg-blue-600 text-white shadow-md flex items-center justify-center gap-1.5 mobile-tap">
+            <span>⚡ Live Deals</span>
+            <span id="showroomTabBadge" class="px-1.5 py-0.2 rounded-full bg-blue-900 text-[10px] font-mono-numbers">0</span>
+          </button>
+          <button id="btnShowroomTabCreate" class="py-2.5 rounded-xl font-black transition text-slate-400 hover:text-white flex items-center justify-center gap-1.5 mobile-tap">
+            <span>➕ Post Bike</span>
+          </button>
+        </div>
+
+        <!-- SUBSECTION A: SELLER ACTIVE DEALS -->
+        <div id="showroomDealsSection" class="space-y-3">
+          <div class="flex items-center justify-between px-0.5">
+            <h2 class="text-sm font-black text-white flex items-center gap-2">
+              <span>Seller Auctions</span>
+              <span id="showroomActiveCount" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-blue-400 font-mono-numbers font-bold">0</span>
+            </h2>
+            <button id="btnRefreshShowroom" class="text-[10px] text-blue-400 hover:text-blue-300 font-bold uppercase tracking-wider flex items-center gap-1 mobile-tap">
+              <span>↻ Refresh Deck</span>
+            </button>
+          </div>
+
+          <!-- Showroom Auction Cards -->
+          <div id="showroomAuctionsContainer" class="space-y-3">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- SUBSECTION B: INSTANT POST BIKE FORM -->
+        <div id="showroomCreateSection" class="hidden mobile-card p-4 rounded-2xl space-y-3.5">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+            <div class="flex items-center space-x-2">
+              <span class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-sm">🏍️</span>
+              <div>
+                <h3 class="text-xs font-bold text-white">List Two-Wheeler for Rapid Flash</h3>
+                <p class="text-[10px] text-slate-400">10-Minute live timer triggers immediately on submit</p>
+              </div>
+            </div>
+          </div>
+
+          <form id="createAuctionForm" class="space-y-3 text-xs">
+            
+            <!-- Brand & Model -->
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-slate-300 font-bold mb-1">Make / Brand</label>
+                <select id="formBrandSelect" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-xl px-2.5 py-2 text-white outline-none focus:ring-1 focus:ring-emerald-500">
+                  <option value="Hero">Hero</option>
+                  <option value="Honda" selected>Honda</option>
+                  <option value="Bajaj">Bajaj</option>
+                  <option value="TVS">TVS</option>
+                  <option value="Royal Enfield">Royal Enfield</option>
+                  <option value="Yamaha">Yamaha</option>
+                  <option value="Suzuki">Suzuki</option>
+                  <option value="KTM">KTM</option>
+                  <option value="Ather">Ather</option>
+                  <option value="Ola">Ola</option>
+                  <option value="Other">Other Make</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-300 font-bold mb-1">Model Name</label>
+                <input type="text" id="formVehicleModel" required placeholder="e.g. Activa 6G DLX" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-xl px-2.5 py-2 text-white outline-none focus:ring-1 focus:ring-emerald-500">
+              </div>
+            </div>
+
+            <!-- Year & KM -->
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-slate-300 font-bold mb-1">Mfg Year</label>
+                <select id="formYear" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-xl px-2.5 py-2 text-white outline-none focus:ring-1 focus:ring-emerald-500 font-mono-numbers">
+                  <option value="2025">2025</option>
+                  <option value="2024">2024</option>
+                  <option value="2023">2023</option>
+                  <option value="2022" selected>2022</option>
+                  <option value="2021">2021</option>
+                  <option value="2020">2020</option>
+                  <option value="2019">2019</option>
+                  <option value="2018">2018</option>
+                  <option value="2017">2017</option>
+                  <option value="2016">2016</option>
+                  <option value="2015">2015</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-300 font-bold mb-1">KM Driven</label>
+                <input type="number" id="formKm" inputmode="numeric" required placeholder="e.g. 18500" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-xl px-2.5 py-2 text-white outline-none focus:ring-1 focus:ring-emerald-500 font-mono-numbers">
+              </div>
+            </div>
+
+            <!-- Vehicle Photos Upload (Front, Side, Meter, Engine) -->
+            <div class="space-y-1.5 p-3 rounded-2xl bg-[#0a0e1c] border border-slate-800">
+              <div class="flex items-center justify-between">
+                <label class="block text-slate-200 font-extrabold text-xs flex items-center gap-1.5">
+                  <span>📸</span>
+                  <span>Vehicle Photos (Front, Meter, Engine)</span>
+                </label>
+                <span class="text-[10px] text-emerald-400 font-mono-numbers font-bold" id="photoCountBadge">0 / 4 Added</span>
+              </div>
+              
+              <!-- Hidden native file input -->
+              <input type="file" id="formBikePhotos" accept="image/*" multiple class="hidden">
+              
+              <!-- Photo Thumbnails Grid & Add Button -->
+              <div class="grid grid-cols-4 gap-2 pt-1" id="photoPreviewGrid">
+                <!-- Add Photo Trigger Card -->
+                <button type="button" id="btnTriggerAddPhotos" class="h-20 rounded-xl border-2 border-dashed border-slate-700 hover:border-emerald-500 bg-[#0d1326] flex flex-col items-center justify-center text-slate-400 hover:text-emerald-400 transition mobile-tap active:scale-95">
+                  <span class="text-xl">📷</span>
+                  <span class="text-[9px] font-bold mt-1">+ Photo</span>
+                </button>
+              </div>
+              <p class="text-[9px] text-slate-400">Add front view, odometer/KM reading, and engine condition photos for buyers.</p>
+            </div>
+
+            <!-- Engine Sound Video / Audio Upload -->
+            <div class="space-y-2 p-3 rounded-2xl bg-[#0a0e1c] border border-slate-800">
+              <div class="flex items-center justify-between">
+                <label class="block text-slate-200 font-extrabold text-xs flex items-center gap-1.5">
+                  <span>🎬</span>
+                  <span>Engine Sound Video / Audio</span>
+                </label>
+                <span class="text-[10px] text-blue-400 font-bold" id="mediaStatusBadge">Recommended</span>
+              </div>
+
+              <!-- Hidden native file input for video/audio -->
+              <input type="file" id="formEngineMedia" accept="video/*,audio/*" class="hidden">
+
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <button type="button" id="btnTriggerAddVideo" class="flex-1 py-2 rounded-xl bg-blue-600/20 border border-blue-500/40 text-blue-400 hover:bg-blue-600/30 text-xs font-bold flex items-center justify-center gap-1.5 mobile-tap active:scale-95">
+                    <span>🎥</span>
+                    <span>Upload Video / Audio</span>
+                  </button>
+                </div>
+
+                <!-- Media Preview Card (Hidden until media selected) -->
+                <div id="mediaPreviewWrapper" class="hidden p-2 rounded-xl bg-[#0d1326] border border-blue-500/30 space-y-2">
+                  <div class="flex items-center justify-between text-xs">
+                    <span id="mediaPreviewTitle" class="text-[10px] text-emerald-400 font-bold truncate">✓ Engine Sound Clip Ready</span>
+                    <button type="button" id="btnRemoveMedia" class="text-[10px] text-red-400 hover:text-red-300 font-bold">✕ Remove</button>
+                  </div>
+                  <video id="videoPreviewEl" controls playsinline class="w-full max-h-36 rounded-lg object-contain bg-black hidden"></video>
+                  <audio id="audioPreviewEl" controls class="w-full h-8 rounded hidden"></audio>
+                </div>
+              </div>
+              <p class="text-[9px] text-slate-400">Upload a 5-15s engine revving video or audio so buyers can verify engine sound before bidding.</p>
+            </div>
+
+            <!-- RC & Base Price -->
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-slate-300 font-bold mb-1">RC Number</label>
+                <input type="text" id="formRcNumber" required placeholder="MH02AB1234" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-xl px-2.5 py-2 text-white outline-none uppercase font-mono-numbers">
+              </div>
+              <div>
+                <label class="block text-slate-300 font-bold mb-1">Reserve Base (₹)</label>
+                <input type="number" id="formBasePrice" inputmode="numeric" required min="5000" step="500" placeholder="e.g. 35000" class="w-full bg-[#0d1222] border border-slate-700/80 rounded-xl px-2.5 py-2 text-white outline-none focus:ring-1 focus:ring-emerald-500 font-mono-numbers">
+              </div>
+            </div>
+
+            <p class="text-[10px] text-slate-400">RC number will be auto-masked as MH-02-**-1234 for buyers until deal closure.</p>
+
+            <button type="submit" id="btnSubmitAuction" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 active:scale-95 transition mobile-tap flex items-center justify-center gap-1.5">
+              <span>🔍 Review Details & Launch Auction</span>
+            </button>
+          </form>
+        </div>
+
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- MOBILE BOTTOM NAVIGATION BAR -->
+      <!-- ============================================================== -->
+      <nav class="flex-shrink-0 z-40 bg-[#0a0e1a]/95 backdrop-blur-lg border-t border-slate-800/80 py-2.5 px-4 flex items-center justify-around safe-area-bottom">
+        <button id="navBtnBuyer" class="flex flex-col items-center text-emerald-400 font-black text-[10px] space-y-1 mobile-tap">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          <span>Live Bids</span>
+        </button>
+
+        <button id="navBtnWallet" class="flex flex-col items-center text-slate-400 hover:text-white font-bold text-[10px] space-y-1 mobile-tap">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+          </svg>
+          <span>My Wallet</span>
+        </button>
+
+        <button id="navBtnSellerDeals" class="hidden flex flex-col items-center text-blue-400 font-black text-[10px] space-y-1 mobile-tap">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          <span>Live Deals</span>
+        </button>
+
+        <button id="navBtnSellerPost" class="hidden flex flex-col items-center text-slate-400 hover:text-white font-bold text-[10px] space-y-1 mobile-tap">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+          </svg>
+          <span>+ Post Bike</span>
+        </button>
+      </nav>
+
+    </div>
+
+  </div>
+
+  <!-- ==================================================================== -->
+  <!-- 3. NATIVE BOTTOM SHEET: WALLET DEPOSIT (ADMIN APPROVAL PROTECTED) -->
+  <!-- ==================================================================== -->
+  <div id="modalDepositFunds" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bottom-sheet-anim bg-[#0d1326] w-full max-w-lg p-5 rounded-t-3xl sm:rounded-2xl border-t sm:border border-slate-700/80 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto safe-area-bottom">
+      
+      <!-- Top Drag Handle -->
+      <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto sm:hidden"></div>
+
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <div class="flex items-center space-x-2">
+          <span class="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 text-base">💰</span>
+          <div>
+            <h3 class="text-sm font-black text-white">Wallet Deposit Request</h3>
+            <p class="text-[10px] text-slate-400">Pre-Funded Wallet • Exchange Desk Approval Required</p>
+          </div>
+        </div>
+        <button id="btnCloseDepositModal" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white text-base flex items-center justify-center">&times;</button>
+      </div>
+
+      <!-- Quick Preset Amounts -->
+      <div>
+        <label class="block text-slate-300 font-bold text-xs mb-1.5">Select Deposit Amount (₹)</label>
+        <div class="grid grid-cols-4 gap-1.5">
+          <button class="btn-preset-deposit py-2 rounded-xl bg-[#141b30] hover:bg-emerald-600 hover:text-slate-950 font-mono-numbers font-black text-xs text-white border border-slate-700/80 mobile-tap" data-amount="3000">₹3,000</button>
+          <button class="btn-preset-deposit py-2 rounded-xl bg-[#141b30] hover:bg-emerald-600 hover:text-slate-950 font-mono-numbers font-black text-xs text-white border border-slate-700/80 mobile-tap" data-amount="5000">₹5,000</button>
+          <button class="btn-preset-deposit py-2 rounded-xl bg-[#141b30] hover:bg-emerald-600 hover:text-slate-950 font-mono-numbers font-black text-xs text-white border border-slate-700/80 mobile-tap" data-amount="10000">₹10,000</button>
+          <button class="btn-preset-deposit py-2 rounded-xl bg-[#141b30] hover:bg-emerald-600 hover:text-slate-950 font-mono-numbers font-black text-xs text-white border border-slate-700/80 mobile-tap" data-amount="25000">₹25,000</button>
+        </div>
+      </div>
+
+      <!-- Custom Amount -->
+      <div>
+        <label class="block text-slate-300 font-bold text-xs mb-1">Custom Amount (₹)</label>
+        <input type="number" id="inputCustomDeposit" inputmode="numeric" placeholder="Enter amount (min ₹1,000)" class="w-full bg-[#141b30] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none font-mono-numbers text-sm">
+      </div>
+
+      <!-- Payment Method -->
+      <div>
+        <label class="block text-slate-300 font-bold text-xs mb-1">Deposit Payment Method</label>
+        <select id="selectDepositMethod" class="w-full bg-[#141b30] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none text-xs">
+          <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
+          <option value="NEFT">Bank Transfer (NEFT / IMPS / RTGS)</option>
+          <option value="CASH">Cash Deposit at Desk</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-slate-300 font-bold text-xs mb-1">Payment UTR / Reference ID</label>
+        <input type="text" id="inputDepositRef" placeholder="12-digit UPI UTR or Bank Ref Number" class="w-full bg-[#141b30] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none font-mono-numbers text-xs">
+      </div>
+
+      <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[10px] text-slate-400 space-y-1">
+        <div class="text-amber-400 font-bold flex items-center gap-1">
+          <span>🛡️</span> <span>Desk Protected Verification</span>
+        </div>
+        <p>Once submitted, Exchange Desk will verify your UTR and credit your trading wallet within minutes.</p>
+      </div>
+
+      <button id="btnSubmitDeposit" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 transition active:scale-95 mobile-tap">
+        Submit Deposit Request for Exchange Desk Approval
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================================================================== -->
+  <!-- 4. NATIVE BOTTOM SHEET: HANDOVER OTP & SETTLEMENT -->
+  <!-- ==================================================================== -->
+  <div id="modalHandover" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bottom-sheet-anim bg-[#0d1326] w-full max-w-lg p-5 rounded-t-3xl sm:rounded-2xl border-t sm:border border-slate-700/80 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto safe-area-bottom">
+      
+      <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto sm:hidden"></div>
+
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <div class="flex items-center space-x-2">
+          <span class="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 text-base">🔑</span>
+          <div>
+            <h3 class="text-sm font-black text-white">Authorize Vehicle Handover</h3>
+            <p class="text-[10px] text-slate-400">Rule 2: Pickup OTP Verification + ₹500 Auto Fee Deduct</p>
+          </div>
+        </div>
+        <button id="btnCloseModal" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white text-base flex items-center justify-center">&times;</button>
+      </div>
+
+      <form id="formVerifyOtp" class="space-y-3.5 text-xs">
+        <input type="hidden" id="modalAuctionId">
+        
+        <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 space-y-1">
+          <div class="flex justify-between">
+            <span class="text-slate-400 font-bold">Vehicle:</span>
+            <span id="modalVehicleName" class="font-bold text-white">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400 font-bold">Winning Buyer:</span>
+            <span id="modalWinnerName" class="font-bold text-emerald-400">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400 font-bold">Final Bid Value:</span>
+            <span id="modalFinalPrice" class="font-bold font-mono-numbers text-white">--</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-bold mb-1.5">Enter 4-Digit Pickup OTP (Provided by Buyer)</label>
+          <input type="text" id="inputPickupOtp" inputmode="numeric" required maxlength="6" placeholder="••••" class="w-full bg-[#141b30] border border-slate-700 rounded-2xl px-3 py-3 text-center text-xl font-mono-numbers font-black text-amber-400 tracking-widest outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[10px] text-slate-400 space-y-0.5">
+          <div class="font-bold text-emerald-400">✓ Automatic Fee Settlement</div>
+          <p>Upon verification, the ₹500 platform desk fee is auto-deducted from winning buyer's pre-funded wallet.</p>
+        </div>
+
+        <button type="submit" id="btnConfirmOtp" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 active:scale-95 transition mobile-tap">
+          Verify OTP & Authorize Handover (Deduct ₹500)
+        </button>
+      </form>
+
+      <!-- Handover Receipt Display -->
+      <div id="handoverReceipt" class="hidden space-y-3 text-xs">
+        <div class="bg-emerald-500/10 border border-emerald-500/30 p-3.5 rounded-2xl text-center space-y-1">
+          <div class="text-lg">🎉</div>
+          <div class="font-black text-emerald-400 text-sm">Vehicle Released Successfully!</div>
+          <div class="text-[10px] text-slate-300 font-mono-numbers" id="receiptTxnId">#TXN-00000</div>
+        </div>
+
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1.5 font-mono-numbers text-[11px]">
+          <div class="flex justify-between">
+            <span class="text-slate-400">Unmasked Full RC:</span>
+            <span id="receiptRc" class="text-white font-bold">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">Fee Auto-Deducted:</span>
+            <span class="text-emerald-400 font-bold">₹500.00</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">Buyer Wallet Remaining:</span>
+            <span id="receiptRemaining" class="text-white font-bold">--</span>
+          </div>
+        </div>
+
+        <button onclick="document.getElementById('modalHandover').classList.add('hidden')" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs">
+          Close & Return to Deals
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================================================================== -->
+  <!-- 5. NATIVE BOTTOM SHEET: LIVE BID AUDIT TRAIL -->
+  <!-- ==================================================================== -->
+  <div id="modalBids" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bottom-sheet-anim bg-[#0d1326] w-full max-w-lg p-5 rounded-t-3xl sm:rounded-2xl border-t sm:border border-slate-700/80 shadow-2xl space-y-3 max-h-[85vh] flex flex-col safe-area-bottom">
+      
+      <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto sm:hidden"></div>
+
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <div class="flex items-center space-x-2">
+          <span class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 text-sm">📋</span>
+          <div>
+            <h3 class="text-xs font-bold text-white">Live Bidding Audit Trail</h3>
+            <p id="auditVehicleTitle" class="text-[10px] text-slate-400 truncate max-w-[220px]"></p>
+          </div>
+        </div>
+        <button id="btnCloseBidsModal" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white text-base flex items-center justify-center">&times;</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-2 pr-1 mobile-scroll" id="auditBidsList">
+        <!-- Populated via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================================== -->
+  <!-- 6. NATIVE BOTTOM SHEET: VEHICLE PHOTOS & ENGINE SOUND VIDEO VIEWER -->
+  <!-- ==================================================================== -->
+  <div id="modalMediaViewer" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bottom-sheet-anim bg-[#0d1326] w-full max-w-lg p-4 sm:p-5 rounded-t-3xl sm:rounded-2xl border-t sm:border border-slate-700/80 shadow-2xl space-y-3.5 max-h-[90vh] flex flex-col safe-area-bottom">
+      
+      <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto sm:hidden"></div>
+
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <div class="flex items-center space-x-2">
+          <span class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-sm">🏍️</span>
+          <div>
+            <h3 id="mediaModalTitle" class="text-xs font-black text-white">Vehicle Media & Engine Sound</h3>
+            <p id="mediaModalSubtitle" class="text-[10px] text-slate-400"></p>
+          </div>
+        </div>
+        <button id="btnCloseMediaModal" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white text-base flex items-center justify-center">&times;</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-4 mobile-scroll pr-0.5">
+        
+        <!-- Engine Sound Video / Audio Section -->
+        <div id="mediaModalVideoSection" class="space-y-2 hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-blue-400 flex items-center gap-1.5">
+              <span>🔊</span>
+              <span>Live Engine Sound Video / Audio</span>
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="eq-bar"></span>
+              <span class="eq-bar"></span>
+              <span class="eq-bar"></span>
+              <span class="eq-bar"></span>
+            </span>
+          </div>
+          <div class="rounded-2xl overflow-hidden bg-black border border-blue-500/30 flex items-center justify-center">
+            <video id="modalVideoPlayer" controls playsinline class="w-full max-h-64 object-contain bg-black hidden"></video>
+            <audio id="modalAudioPlayer" controls class="w-full m-3 hidden"></audio>
+          </div>
+        </div>
+
+        <!-- Vehicle Photos Gallery -->
+        <div id="mediaModalPhotosSection" class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-white flex items-center gap-1.5">
+              <span>📷</span>
+              <span>Vehicle Inspection Photos</span>
+            </span>
+            <span id="mediaModalPhotoCount" class="text-[10px] font-mono-numbers text-emerald-400 font-bold"></span>
+          </div>
+          <div id="mediaModalPhotosGrid" class="grid grid-cols-2 gap-2">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <button id="btnMediaModalCloseBottom" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition active:scale-95 mobile-tap">
+        Close Media Viewer
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ==================================================================== -->
+  <!-- 7. FULL-SCREEN IMAGE LIGHTBOX & INTERACTIVE ZOOM MODAL -->
+  <!-- ==================================================================== -->
+  <div id="modalPhotoZoom" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md hidden flex flex-col justify-between select-none safe-area-top safe-area-bottom">
+    
+    <!-- Top Control Bar -->
+    <div class="px-4 py-3 flex items-center justify-between z-10 bg-gradient-to-b from-black/80 to-transparent">
+      <div class="flex items-center space-x-2">
+        <span class="p-1 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs">📷</span>
+        <span id="zoomPhotoCounter" class="text-xs font-mono-numbers font-black text-white">Photo 1 of 1</span>
+        <span id="zoomLevelBadge" class="text-[10px] font-mono-numbers px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-bold border border-slate-700">100%</span>
+      </div>
+      
+      <!-- Zoom Actions & Close -->
+      <div class="flex items-center space-x-2">
+        <button id="btnZoomIn" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-black text-sm flex items-center justify-center active:scale-90 transition mobile-tap" title="Zoom In">+</button>
+        <button id="btnZoomOut" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-black text-sm flex items-center justify-center active:scale-90 transition mobile-tap" title="Zoom Out">−</button>
+        <button id="btnZoomReset" class="px-2.5 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-300 flex items-center justify-center active:scale-90 transition mobile-tap">1x</button>
+        <button id="btnClosePhotoZoom" class="w-8 h-8 rounded-full bg-red-500/30 text-red-300 hover:bg-red-500/50 text-base flex items-center justify-center font-bold active:scale-90 transition mobile-tap">&times;</button>
+      </div>
+    </div>
+
+    <!-- Center Viewport (Pinch & Pan Container) -->
+    <div id="zoomViewport" class="relative flex-1 w-full overflow-hidden flex items-center justify-center touch-none">
+      <img id="zoomTargetImg" src="" alt="Zoomable Vehicle View" class="max-w-full max-h-full object-contain transition-transform duration-100 ease-out origin-center cursor-grab active:cursor-grabbing">
+      
+      <!-- Left & Right Carousel Arrows (for multiple photos) -->
+      <button id="btnZoomPrev" class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 border border-white/20 text-white font-black text-xl flex items-center justify-center shadow-lg active:scale-90 transition mobile-tap hidden">‹</button>
+      <button id="btnZoomNext" class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 border border-white/20 text-white font-black text-xl flex items-center justify-center shadow-lg active:scale-90 transition mobile-tap hidden">›</button>
+    </div>
+
+    <!-- Bottom Thumbnail Strip & Double-Tap Tip -->
+    <div class="px-4 py-3 bg-gradient-to-t from-black/90 via-black/80 to-transparent space-y-2 z-10">
+      <div class="text-[10px] text-center text-slate-400">
+        <span>💡 Double-tap or pinch to zoom in/out • Drag to inspect details</span>
+      </div>
+      <div id="zoomThumbnailStrip" class="flex items-center justify-center gap-2 overflow-x-auto py-1">
+        <!-- Thumbnails injected via JS -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==================================================================== -->
+  <!-- 8. NATIVE BOTTOM SHEET: PRE-LAUNCH LISTING VERIFICATION & PREVIEW -->
+  <!-- ==================================================================== -->
+  <div id="modalPostPreview" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bottom-sheet-anim bg-[#0d1326] w-full max-w-lg p-5 rounded-t-3xl sm:rounded-2xl border-t sm:border border-slate-700/80 shadow-2xl space-y-4 max-h-[90vh] flex flex-col safe-area-bottom">
+      
+      <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto sm:hidden"></div>
+
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <div class="flex items-center space-x-2">
+          <span class="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 text-base">🔍</span>
+          <div>
+            <h3 class="text-sm font-black text-white">Review Vehicle Listing</h3>
+            <p class="text-[10px] text-slate-400">Verify all details before launching live bidding</p>
+          </div>
+        </div>
+        <button id="btnClosePostPreview" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white text-base flex items-center justify-center">&times;</button>
+      </div>
+
+      <!-- Preview Body -->
+      <div class="flex-1 overflow-y-auto space-y-3.5 mobile-scroll pr-0.5">
+        
+        <!-- Live Card Mockup -->
+        <div class="glass-panel p-4 rounded-2xl border border-emerald-500/40 bg-gradient-to-b from-[#0f172a] to-[#0a0e1c] shadow-lg space-y-3">
+          
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="flex items-center space-x-2">
+                <h4 id="previewVehicleModel" class="text-base font-extrabold text-white">--</h4>
+                <span id="previewYearBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-bold border border-slate-700">--</span>
+              </div>
+              <div class="flex items-center space-x-2 text-xs text-slate-400 mt-1">
+                <span id="previewKm">-- KM</span>
+                <span>•</span>
+                <span class="font-mono text-emerald-400 font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-700 text-xs" id="previewRc">
+                  RC: --
+                </span>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              10-MIN RAPID FLASH
+            </span>
+          </div>
+
+          <!-- Reserve Base Price -->
+          <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+            <div>
+              <div class="text-[10px] uppercase font-bold text-slate-400">Reserve Opening Base Price</div>
+              <div id="previewBasePrice" class="text-2xl font-black font-mono-numbers text-emerald-400">₹0</div>
+            </div>
+            <span class="text-[10px] px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
+              ✓ Ready for Flash
+            </span>
+          </div>
+
+          <!-- Photos Preview Strip -->
+          <div id="previewPhotosContainer" class="space-y-1.5 hidden">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Uploaded Photos:</span>
+            <div id="previewPhotosList" class="grid grid-cols-4 gap-2"></div>
+          </div>
+
+          <!-- Engine Sound Video Preview Badge -->
+          <div id="previewMediaBadge" class="hidden p-2.5 rounded-xl bg-blue-950/50 border border-blue-500/30 flex items-center justify-between text-xs text-blue-300">
+            <span class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">🔊</span>
+              <span class="font-bold">Engine Sound Video / Audio Attached</span>
+            </span>
+            <span class="text-[10px] text-emerald-400 font-bold">✓ Included</span>
+          </div>
+
+        </div>
+
+        <!-- Warning Callout -->
+        <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs space-y-1">
+          <div class="font-bold flex items-center gap-1.5">
+            <span>⚡ Important Before Launch:</span>
+          </div>
+          <p class="text-[11px] text-slate-300">
+            Jaise hi aap Confirm karenge, turant 10-Minute live timer shuru ho jayega aur registered used-bike dealers ko notification jayegi. Agar koi mistake hai toh abhi Edit kar lijiye.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
+        <button type="button" id="btnPreviewEdit" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition active:scale-95 mobile-tap flex items-center justify-center gap-1">
+          <span>✏️ Edit Details</span>
+        </button>
+        <button type="button" id="btnPreviewConfirm" class="py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 active:scale-95 transition mobile-tap flex items-center justify-center gap-1">
+          <span>🚀 Confirm & Launch</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================================================================== -->
+  <!-- 10. NATIVE IN-APP AUTO-UPDATE MODAL -->
+  <!-- ==================================================================== -->
+  <div id="modalAppUpdate" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-[#0d1326] w-full max-w-sm p-5 rounded-3xl border border-emerald-500/40 shadow-2xl space-y-4 relative overflow-hidden animate-in fade-in zoom-in duration-200">
+      
+      <!-- Top Decorative Glow -->
+      <div class="absolute -top-12 -right-12 w-28 h-28 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+      <!-- Icon & Header -->
+      <div class="text-center space-y-2 pt-1">
+        <div class="w-16 h-16 mx-auto rounded-2xl shadow-xl shadow-blue-500/25 flex items-center justify-center">
+          <img src="logo.png" alt="ExchangeDesk" class="w-full h-full object-contain rounded-2xl bg-[#091124] border border-blue-500/40">
+        </div>
+        <div class="space-y-0.5">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+            <span id="updateModalVersionBadge">v2.2.0 Available</span>
+          </div>
+          <h3 id="updateModalTitle" class="text-base font-black text-white">Naya Update Available Hai!</h3>
+          <p class="text-xs text-slate-400">ExchangeDesk ko latest features ke sath update karein.</p>
+        </div>
+      </div>
+
+      <!-- Changelog Features Box -->
+      <div id="updateChangelogBox" class="p-3.5 rounded-2xl bg-[#141b30] border border-slate-700/60 space-y-2">
+        <p class="text-[11px] font-bold text-slate-300 flex items-center gap-1">
+          <span>✨</span> <span>Naye Improvements:</span>
+        </p>
+        <ul id="updateModalNotesList" class="space-y-1.5 text-[11px] text-slate-300">
+          <li class="flex items-start gap-1.5">
+            <span class="text-emerald-400 font-bold shrink-0">✓</span>
+            <span>Official ExchangeDesk Brand Logo</span>
+          </li>
+          <li class="flex items-start gap-1.5">
+            <span class="text-emerald-400 font-bold shrink-0">✓</span>
+            <span>Direct 1-Click In-App APK Updates</span>
+          </li>
+          <li class="flex items-start gap-1.5">
+            <span class="text-emerald-400 font-bold shrink-0">✓</span>
+            <span>0-Second Instant Live Bidding Engine</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Download Progress & Installation Guide Area (Animated) -->
+      <div id="updateDownloadProgressArea" class="hidden space-y-2.5 p-3 rounded-2xl bg-[#141b30] border border-emerald-500/30">
+        <div class="flex items-center justify-between text-xs font-bold text-slate-300">
+          <span id="updateProgressStatusText" class="flex items-center gap-1.5 text-emerald-400">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>Downloading Update...</span>
+          </span>
+          <span id="updateProgressPercent" class="font-mono text-emerald-300">0%</span>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
+          <div id="updateProgressBarFill" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-200" style="width: 0%"></div>
+        </div>
+
+        <!-- Installation Instructions (Appears once downloaded) -->
+        <div id="updateInstallInstructions" class="hidden pt-1 space-y-1.5 text-[11px] text-slate-300 border-t border-slate-800">
+          <p class="font-bold text-amber-300 flex items-center gap-1">
+            <span>👉</span> <span>Install Kaise Karein:</span>
+          </p>
+          <p>1. Niche <span class="text-white font-bold">"TAP TO INSTALL APK"</span> dabayein.</p>
+          <p>2. Screen par Android pop-up aayega: <span class="text-emerald-400 font-bold">"Update"</span> dabayein.</p>
+          <p>3. Complete hone ke baad <span class="text-emerald-400 font-bold">"Open"</span> dabayein!</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2 pt-1">
+        <button id="btnTriggerAppUpdate" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 active:scale-95 transition flex items-center justify-center gap-2 mobile-tap">
+          <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          <span id="btnTriggerAppUpdateText">1-Click Update Now</span>
+        </button>
+        
+        <button id="btnDismissAppUpdate" class="w-full py-2.5 rounded-xl bg-transparent hover:bg-slate-800/50 text-slate-400 font-bold text-xs transition active:scale-95 mobile-tap">
+          Baad Me / Remind Later
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================================================================== -->
+  <!-- 11. NATIVE BID CONFIRMATION MODAL (ACCIDENTAL CLICK PROTECTION) -->
+  <!-- ==================================================================== -->
+  <div id="modalBidConfirmation" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bottom-sheet-anim bg-[#0d1326] w-full max-w-md p-5 rounded-t-3xl sm:rounded-2xl border-t sm:border border-emerald-500/40 shadow-2xl space-y-4 max-h-[90vh] flex flex-col safe-area-bottom relative overflow-hidden">
+      
+      <!-- Top Decorative Glow -->
+      <div class="absolute -top-10 -right-10 w-28 h-28 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto sm:hidden shrink-0"></div>
+
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-lg">
+            ⚡
+          </div>
+          <div>
+            <h3 class="text-sm font-black text-white">Confirm Your Bid</h3>
+            <p class="text-[11px] text-slate-400">Pushti karein ki aap ye bid lagana chahte hain</p>
+          </div>
+        </div>
+        <button id="btnCloseBidConfirmation" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white text-base flex items-center justify-center">&times;</button>
+      </div>
+
+      <!-- Vehicle Summary Box -->
+      <div class="p-3 rounded-2xl bg-[#141b30] border border-slate-800 flex items-center justify-between">
+        <div class="space-y-0.5 min-w-0 pr-2">
+          <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Vehicle Model</div>
+          <div id="bidConfirmVehicleTitle" class="text-xs font-bold text-white truncate">--</div>
+          <div id="bidConfirmSellerName" class="text-[10px] text-slate-400 truncate">--</div>
+        </div>
+        <div class="shrink-0 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-wider">
+          Live Bidding
+        </div>
+      </div>
+
+      <!-- Current vs Increment Breakdown -->
+      <div class="grid grid-cols-2 gap-2">
+        <div class="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
+          <div class="text-[10px] text-slate-400 font-medium">Abhi Ki Highest Bid</div>
+          <div id="bidConfirmCurrentBid" class="text-base font-bold font-mono-numbers text-slate-200">₹0</div>
+        </div>
+        <div class="p-3 rounded-2xl bg-emerald-950/30 border border-emerald-800/40 space-y-1">
+          <div class="text-[10px] text-emerald-300 font-medium">Badhane Ki Rakam</div>
+          <div id="bidConfirmIncrement" class="text-base font-bold font-mono-numbers text-emerald-400">+₹500</div>
+        </div>
+      </div>
+
+      <!-- New Binding Bid Highlight -->
+      <div class="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-950/60 via-[#0d1f1c] to-[#0d1326] border border-emerald-500/50 text-center space-y-1 shadow-lg shadow-emerald-950/40">
+        <div class="text-[11px] font-bold text-emerald-300 uppercase tracking-wider flex items-center justify-center gap-1.5">
+          <span>👑</span> <span>Aapki Nayi Binding Bid</span>
+        </div>
+        <div id="bidConfirmNewTotalBid" class="text-3xl font-black font-mono-numbers text-white tracking-tight">₹0</div>
+        <p class="text-[10px] text-slate-400">Confirm karne par ye bid turant lag jayegi aur leading ban sakti hai.</p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2 pt-1">
+        <button id="btnConfirmPlaceBid" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/25 active:scale-95 transition flex items-center justify-center gap-2 mobile-tap">
+          <span>✓</span>
+          <span id="btnConfirmPlaceBidText">Haan, Bid Confirm Karein</span>
+        </button>
+
+        <button id="btnCancelBidConfirmation" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition active:scale-95 mobile-tap">
+          ✕ Cancel (Galti se click hua)
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER (FLOATING NATIVE NOTIFICATION) -->
+  <div id="toastContainer" class="fixed bottom-20 left-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none max-w-sm mx-auto w-full"></div>
+
+  <!-- Scripts -->
+  <script type="module" src="js/app.js?v=20261024_12"></script>
+</body>
+</html>

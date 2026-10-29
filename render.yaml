@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: exchangedesk-backend
+    env: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://postgres.rvlynhmbtbibodrpmuls:Gulzar%401013@aws-0-ap-south-1.pooler.supabase.com:6543/postgres
+      - key: MIN_WALLET_BALANCE_TO_BID
+        value: "3000"
+      - key: MIN_BID_INCREMENT
+        value: "500"
+      - key: HANDOVER_PLATFORM_FEE
+        value: "500"
+      - key: DEFAULT_AUCTION_DURATION_MINUTES
+        value: "10"

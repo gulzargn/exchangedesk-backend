@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: exchangedesk-engine
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: exchangedesk-db
+          property: connectionString
+      - key: MIN_WALLET_BALANCE_TO_BID
+        value: 3000
+      - key: MIN_BID_INCREMENT
+        value: 500
+      - key: HANDOVER_PLATFORM_FEE
+        value: 500
+      - key: DEFAULT_AUCTION_DURATION_MINUTES
+        value: 10
+
+databases:
+  - name: exchangedesk-db
+    plan: free
+    databaseName: exchangedesk
+    user: postgres

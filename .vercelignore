@@ -1,0 +1,7 @@
+android/
+node_modules/
+.gradle/
+*.log
+.env.local
+*.apk
+public/*.apk

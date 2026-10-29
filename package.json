@@ -1,0 +1,26 @@
+{
+  "name": "exchangedesk",
+  "version": "1.0.0",
+  "description": "ExchangeDesk - 10-Minute Rapid Used Two-Wheeler Exchange Bidding Engine for Showroom Sub-Dealers",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "init-db": "node src/db/initDb.js",
+    "connect-supabase": "node src/db/connectSupabase.js",
+    "tunnel": "node src/tunnel.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "localtunnel": "^2.0.2",
+    "pg": "^8.13.1",
+    "pg-mem": "^3.0.4",
+    "socket.io": "^4.8.1"
+  }
+}

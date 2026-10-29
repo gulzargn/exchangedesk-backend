@@ -1,0 +1,14 @@
+{
+  "appId": "com.exchangedesk.app",
+  "appName": "ExchangeDesk",
+  "webDir": "public",
+  "server": {
+    "url": "https://exchangedesk-five.vercel.app",
+    "cleartext": true,
+    "androidScheme": "https",
+    "allowNavigation": [
+      "exchangedesk-five.vercel.app",
+      "*.vercel.app"
+    ]
+  }
+}

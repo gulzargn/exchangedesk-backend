@@ -1,0 +1,16 @@
+{
+  "name": "ExchangeDesk - 2-Wheeler Exchange App",
+  "short_name": "ExchangeDesk",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060810",
+  "theme_color": "#10b981",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ]
+}
