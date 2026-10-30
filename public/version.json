@@ -1,15 +1,18 @@
 {
-  "version": "3.2.2",
-  "versionCode": 322,
-  "build": "20261030_03",
+  "version": "3.3.0",
+  "versionCode": 330,
+  "build": "20261030_04",
   "releaseDate": "2026-10-30",
-  "title": "ExchangeDesk 3.2.2 (Ultra-Fast 0-Sec Instant Bidding)",
+  "title": "ExchangeDesk 3.3.0 (Pro Power Release)",
   "notes": [
-    "⚡ 0-Second Instant Bidding: Bid amount & badge updates on your screen in 0 milliseconds",
-    "🚀 High-Speed Multi-User Sync: Heartbeat boosted to 1.5 seconds with in-memory caching",
-    "✨ Clean Buyer Profile Header: Wallet balance card & action buttons never overlap",
-    "📲 1-Click Direct In-App OTA Update"
+    "📸 Live Camera & Fast Upload: Direct camera photo capture with instant client compression",
+    "🔍 Bike Inspection Chips: Tyres, Engine Smoke, Self Start, Insurance & Challan report",
+    "🤖 Auto-Bid (Proxy Bidding): Set your max budget and let the app win for you",
+    "⚡ Loud Outbid Alert & Haptics: Never miss a bid with instant 1-tap counter bid pill",
+    "📄 1-Click WhatsApp Delivery Gate Pass: Share delivery slip directly with showroom & buyer",
+    "⏱️ Anti-Sniping Live Indicator & Offline Reconnection Banner",
+    "💳 Fast UPI Top-Up with direct Intent launch"
   ],
-  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.2.2/ExchangeDesk_v3.2.2_Live.apk",
+  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.3.0/ExchangeDesk_v3.3_Live.apk",
   "isMandatory": false
 }

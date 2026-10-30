@@ -75,10 +75,11 @@ export async function initDatabase() {
       await pool.query('ALTER TABLE platform_transactions ALTER COLUMN auction_id DROP NOT NULL');
     } catch (_) {}
 
-    // Ensure auctions has photos and engine_sound_video columns
+    // Ensure auctions has photos, engine_sound_video, and condition_report columns
     try {
       await pool.query("ALTER TABLE auctions ADD COLUMN IF NOT EXISTS photos TEXT DEFAULT '[]'");
       await pool.query("ALTER TABLE auctions ADD COLUMN IF NOT EXISTS engine_sound_video TEXT DEFAULT ''");
+      await pool.query("ALTER TABLE auctions ADD COLUMN IF NOT EXISTS condition_report JSONB DEFAULT '{}'");
     } catch (_) {}
 
     // Check if tables exist, if not run schema

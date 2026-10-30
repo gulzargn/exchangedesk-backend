@@ -84,6 +84,7 @@ export function createAuctionsRouter(io) {
       const photos = req.body.photos || [];
       const engine_sound_video = req.body.engine_sound_video || req.body.video || '';
       const duration_minutes = req.body.duration_minutes || config.defaultAuctionDurationMinutes;
+      const condition_report = req.body.condition_report || {};
 
       // Input validations with clear, readable errors
       if (!vehicle_model) {
@@ -148,13 +149,14 @@ export function createAuctionsRouter(io) {
 
       const photosJson = typeof photos === 'string' ? photos : JSON.stringify(photos || []);
       const engineSoundMedia = typeof engine_sound_video === 'string' ? engine_sound_video : '';
+      const conditionReportJson = typeof condition_report === 'string' ? condition_report : JSON.stringify(condition_report || {});
 
       const insertRes = await query(
         `INSERT INTO auctions (
           showroom_id, vehicle_model, manufacturing_year, km_driven,
           rc_number, base_price, current_highest_bid, highest_bidder_id,
-          status, starts_at, ends_at, pickup_otp, photos, engine_sound_video
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, NULL, 'LIVE', $8, $9, $10, $11, $12)
+          status, starts_at, ends_at, pickup_otp, photos, engine_sound_video, condition_report
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, NULL, 'LIVE', $8, $9, $10, $11, $12, $13)
         RETURNING *`,
         [
           showroomId,
@@ -169,6 +171,7 @@ export function createAuctionsRouter(io) {
           pickupOtp,
           photosJson,
           engineSoundMedia,
+          conditionReportJson,
         ]
       );
 
@@ -221,7 +224,7 @@ export function createAuctionsRouter(io) {
         `SELECT a.id, a.showroom_id, a.vehicle_model, a.manufacturing_year, a.km_driven,
                 a.base_price, a.current_highest_bid, a.highest_bidder_id, a.status,
                 a.starts_at, a.ends_at, a.created_at, a.pickup_otp, a.rc_number,
-                a.photos, a.engine_sound_video,
+                a.photos, a.engine_sound_video, a.condition_report,
                 CASE WHEN a.engine_sound_video IS NOT NULL AND a.engine_sound_video != '' THEN true ELSE false END as has_engine_media,
                 s.name as showroom_name, s.address as showroom_address,
                 b.business_name as highest_bidder_name,
@@ -291,6 +294,7 @@ export function createAuctionsRouter(io) {
           end_time: auction.ends_at,
           highest_bid_buyer_id: auction.highest_bidder_id,
           highest_bid_buyer_name: auction.highest_bidder_name,
+          condition_report: auction.condition_report || {},
         };
 
         if (isOwnerShowroom) {
