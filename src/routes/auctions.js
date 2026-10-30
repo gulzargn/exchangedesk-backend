@@ -654,6 +654,12 @@ export function createAuctionsRouter(io) {
       });
     }
 
+    if (increment % 500 !== 0) {
+      return res.status(400).json({
+        error: 'Bid amount must be in multiples of ₹500 (e.g. +₹500, +₹1,000, +₹1,500...)',
+      });
+    }
+
     const client = await getClient();
     try {
       await client.query('BEGIN');

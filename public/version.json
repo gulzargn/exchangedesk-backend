@@ -1,18 +1,19 @@
 {
-  "version": "3.3.0",
-  "versionCode": 330,
-  "build": "20261030_04",
+  "version": "3.3.1",
+  "versionCode": 331,
+  "build": "20261030_05",
   "releaseDate": "2026-10-30",
-  "title": "ExchangeDesk 3.3.0 (Pro Power Release)",
+  "title": "ExchangeDesk 3.3.1 (Custom Amount Bidding)",
   "notes": [
+    "🎯 Custom Amount Bid: Enter any desired bid amount in ₹500 multiples with live validation",
+    "⚡ Quick Increment Chips: +₹500, +₹1,000, +₹2,000, +₹5,000, +₹10,000",
     "📸 Live Camera & Fast Upload: Direct camera photo capture with instant client compression",
     "🔍 Bike Inspection Chips: Tyres, Engine Smoke, Self Start, Insurance & Challan report",
-    "🤖 Auto-Bid (Proxy Bidding): Set your max budget and let the app win for you",
     "⚡ Loud Outbid Alert & Haptics: Never miss a bid with instant 1-tap counter bid pill",
     "📄 1-Click WhatsApp Delivery Gate Pass: Share delivery slip directly with showroom & buyer",
     "⏱️ Anti-Sniping Live Indicator & Offline Reconnection Banner",
     "💳 Fast UPI Top-Up with direct Intent launch"
   ],
-  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.3.0/ExchangeDesk_v3.3_Live.apk",
+  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.3.1/ExchangeDesk_v3.3.1_Live.apk",
   "isMandatory": false
 }
