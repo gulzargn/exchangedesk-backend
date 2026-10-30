@@ -39,6 +39,11 @@ export async function initDatabase() {
       idleTimeoutMillis: 30000,
     });
 
+    // Handle unexpected errors on idle database clients (prevents app crash on connection reset)
+    testPool.on('error', (err) => {
+      console.error('[DB] Unexpected error on idle PostgreSQL client (auto-reconnecting):', err.message);
+    });
+
     const client = await testPool.connect();
     await client.query('SELECT 1');
     client.release();

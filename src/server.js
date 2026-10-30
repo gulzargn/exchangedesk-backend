@@ -82,6 +82,15 @@ app.use((req, res) => {
   res.sendFile(path.resolve(__dirname, '../public/index.html'));
 });
 
+// Process error handlers to prevent unexpected server crash
+process.on('uncaughtException', (err) => {
+  console.error('[Process] Uncaught Exception:', err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Process] Unhandled Rejection:', reason);
+});
+
 // Start Server
 async function start() {
   try {
