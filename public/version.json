@@ -1,14 +1,15 @@
 {
-  "version": "3.2.1",
-  "versionCode": 321,
-  "build": "20261030_02",
+  "version": "3.2.2",
+  "versionCode": 322,
+  "build": "20261030_03",
   "releaseDate": "2026-10-30",
-  "title": "ExchangeDesk 3.2.1 (Wallet & History Overlap Fix)",
+  "title": "ExchangeDesk 3.2.2 (Ultra-Fast 0-Sec Instant Bidding)",
   "notes": [
+    "⚡ 0-Second Instant Bidding: Bid amount & badge updates on your screen in 0 milliseconds",
+    "🚀 High-Speed Multi-User Sync: Heartbeat boosted to 1.5 seconds with in-memory caching",
     "✨ Clean Buyer Profile Header: Wallet balance card & action buttons never overlap",
-    "🚀 24/7 Live Render Backend with fast real-time bidding & stable DB connection",
-    "⚡ 1-Click Direct In-App Update: Instant updates inside the app without manual APK transfer"
+    "📲 1-Click Direct In-App OTA Update"
   ],
-  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.2.1/ExchangeDesk_v3.2.1_Live.apk",
+  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.2.2/ExchangeDesk_v3.2.2_Live.apk",
   "isMandatory": false
 }

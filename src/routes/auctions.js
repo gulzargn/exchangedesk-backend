@@ -7,6 +7,20 @@ import { config } from '../config.js';
 export function createAuctionsRouter(io) {
   const router = express.Router();
 
+  // High-speed In-Memory Cache for /active feed with automatic invalidation on bids
+  const activeAuctionsCache = new Map();
+
+  function invalidateActiveCache() {
+    activeAuctionsCache.clear();
+  }
+
+  // Periodic background autoClose every 5 seconds (non-blocking)
+  setInterval(() => {
+    autoCloseExpiredAuctions().catch((err) => {
+      console.error('[AutoClose Background] Error:', err.message);
+    });
+  }, 5000);
+
   /**
    * Helper: Automatically check and close all expired auctions whose 10-minute timer ended,
    * awarding the win to the highest bidder.
@@ -47,6 +61,7 @@ export function createAuctionsRouter(io) {
             io.emit('feed_auction_closed', closePayload);
           }
         }
+        invalidateActiveCache();
       }
     } catch (err) {
       console.error('[AutoClose] Error checking expired auctions:', err.message);
@@ -158,6 +173,7 @@ export function createAuctionsRouter(io) {
       );
 
       const createdAuction = insertRes.rows[0];
+      invalidateActiveCache();
 
       // Broadcast new auction to global socket feed
       const broadcastData = {
@@ -193,10 +209,14 @@ export function createAuctionsRouter(io) {
 
       const { view = 'buyer', showroom_id, buyer_id } = req.query;
 
-      // 1. Auto-close all expired auctions where timer has ended, declaring winner
-      await autoCloseExpiredAuctions();
+      // Fast in-memory cache check (1.2s TTL for lightning-fast multi-device heartbeat)
+      const cacheKey = `${view}:${showroom_id || ''}:${buyer_id || ''}`;
+      const cached = activeAuctionsCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp < 1200)) {
+        return res.json(cached.payload);
+      }
 
-      // 2. Query active & recent auctions (including photos and engine sound video)
+      // Query active & recent auctions (including photos and engine sound video)
       const result = await query(
         `SELECT a.id, a.showroom_id, a.vehicle_model, a.manufacturing_year, a.km_driven,
                 a.base_price, a.current_highest_bid, a.highest_bidder_id, a.status,
@@ -205,15 +225,10 @@ export function createAuctionsRouter(io) {
                 CASE WHEN a.engine_sound_video IS NOT NULL AND a.engine_sound_video != '' THEN true ELSE false END as has_engine_media,
                 s.name as showroom_name, s.address as showroom_address,
                 b.business_name as highest_bidder_name,
-                COALESCE(bc.total_bids, 0) as total_bids
+                COALESCE((SELECT count(*) FROM bids WHERE auction_id = a.id), 0) as total_bids
          FROM auctions a
          JOIN showrooms s ON a.showroom_id = s.id
          LEFT JOIN buyers b ON a.highest_bidder_id = b.id
-         LEFT JOIN (
-           SELECT auction_id, count(*) as total_bids
-           FROM bids
-           GROUP BY auction_id
-         ) bc ON bc.auction_id = a.id
          ORDER BY
            CASE WHEN a.status = 'LIVE' THEN 1
                 WHEN a.status = 'CLOSED' THEN 2
@@ -306,12 +321,19 @@ export function createAuctionsRouter(io) {
         };
       });
 
-      return res.json({
+      const responsePayload = {
         success: true,
         count: formatted.length,
         serverTime: Date.now(),
         auctions: formatted,
+      };
+
+      activeAuctionsCache.set(cacheKey, {
+        timestamp: Date.now(),
+        payload: responsePayload,
       });
+
+      return res.json(responsePayload);
     } catch (err) {
       console.error('[API:activeAuctions] Error:', err);
       return res.status(500).json({ error: err.message });
@@ -349,6 +371,7 @@ export function createAuctionsRouter(io) {
 
       if (auction.status === 'LIVE') {
         await query("UPDATE auctions SET status = 'CLOSED' WHERE id = $1", [id]);
+        invalidateActiveCache();
         console.log(`[Auction:Close] #${id} (${auction.vehicle_model}) closed. Winner: ${auction.winner_name || 'Counter'}`);
 
         if (io) {
@@ -564,6 +587,7 @@ export function createAuctionsRouter(io) {
 
       // Commit transaction
       await client.query('COMMIT');
+      invalidateActiveCache();
 
       const txRecord = txRes.rows[0];
 
@@ -643,6 +667,7 @@ export function createAuctionsRouter(io) {
       if (serverNow.getTime() >= new Date(auction.ends_at).getTime()) {
         await client.query("UPDATE auctions SET status = 'CLOSED' WHERE id = $1", [auctionId]);
         await client.query('COMMIT');
+      invalidateActiveCache();
         throw new Error('Auction time has expired');
       }
 
@@ -685,6 +710,7 @@ export function createAuctionsRouter(io) {
       );
 
       await client.query('COMMIT');
+      invalidateActiveCache();
 
       if (io) {
         const bidPayload = {
