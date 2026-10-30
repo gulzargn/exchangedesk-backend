@@ -67,7 +67,7 @@ app.get(['/api/version', '/api/app/version', '/version'], (req, res) => {
       'Auto Winner & Instant Delivery OTP',
       'Exchange Desk Verified Counter Approvals'
     ],
-    apkUrl: 'https://exchangedesk-five.vercel.app/ExchangeDesk.apk',
+    apkUrl: 'https://github.com/gulzargn/exchangedesk-backend/releases/latest/download/ExchangeDesk_v3.2_Live.apk',
     isMandatory: false
   });
 });
