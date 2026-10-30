@@ -1,17 +1,14 @@
 {
-  "version": "3.2.0",
-  "versionCode": 320,
-  "build": "20261027_01",
-  "releaseDate": "2026-10-27",
-  "title": "ExchangeDesk 3.2 (Pickup OTP Winner Delivery & Filter Tabs)",
+  "version": "3.2.1",
+  "versionCode": 321,
+  "build": "20261030_02",
+  "releaseDate": "2026-10-30",
+  "title": "ExchangeDesk 3.2.1 (Wallet & History Overlap Fix)",
   "notes": [
-    "🏆 Winner Pickup OTP Banner: Winning buyers securely see 6-digit Pickup OTP for vehicle release",
-    "🔢 Handover 6-digit OTP Fix: Corrected Showroom verification dialog for fast bike delivery",
-    "🎯 Smart Filter Tabs: Instant toggle between 🔥 Live Auctions, 🏆 My Wins, and 📋 All",
-    "⚡ Showroom Auction Manager: Filter active flash auctions vs closed handover-pending bikes",
-    "🔊 Auditory & Tactile Bid Feedback: Snappy click sounds and haptic vibration on bids",
-    "📸 Zero-lag Base64 & Cloud Photo Rendering with swipe & zoom gallery"
+    "✨ Clean Buyer Profile Header: Wallet balance card & action buttons never overlap",
+    "🚀 24/7 Live Render Backend with fast real-time bidding & stable DB connection",
+    "⚡ 1-Click Direct In-App Update: Instant updates inside the app without manual APK transfer"
   ],
-  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/latest/download/ExchangeDesk_v3.2_Live.apk",
+  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.2.1/ExchangeDesk_v3.2.1_Live.apk",
   "isMandatory": false
 }
