@@ -1,16 +1,17 @@
 {
-  "version": "3.4.1",
-  "versionCode": 341,
-  "build": "20261101_04",
+  "version": "3.5.0",
+  "versionCode": 350,
+  "build": "20261101_05",
   "releaseDate": "2026-11-01",
-  "title": "ExchangeDesk 3.4.1 (Ultra-Smooth 120 Hz High Refresh Rate Edition)",
+  "title": "ExchangeDesk 3.5.0 (Vahan RTO, Form 29/30, EMD Lock & Sound Engine Edition)",
   "notes": [
-    "🚀 120 Hz Ultra-Smooth Refresh Rate: Native Android display mode & Flutter VSync sync for buttery 120 FPS scrolling",
-    "🔒 Enterprise JWT & PIN Security: Encrypted session tokens and bcrypt hashed PINs for buyer, showroom & admin",
-    "🔔 Notification Center: Live alert drawer with unread counter for outbid alerts, won auctions, and announcements",
-    "⚡ 24/7 KeepAlive Heartbeat: Cloud backend stays continuously awake with 0-second cold-start response times",
-    "📸 Camera & Storage Permissions: Android 13/14 native media permissions with smart photo compression"
+    "🛡️ Vahan RC & 0 Challan Verification: Instant MoRTH e-Register check for traffic challans, NOC, and fitness",
+    "🔒 EMD Token Security Lock: Automatic ₹2,000 security lock to eliminate bogus bidders and buyer no-shows",
+    "📄 Statutory RTO Form 29 & 30 PDF: Instant legal ownership transfer notice & agreement with pre-filled parties",
+    "🎙️ 15-Second Engine Sound Clip: Showrooms can record cold start audio; buyers listen with dynamic waveform visualizer",
+    "❤️ Watchlist & Bookmarks: Monitor high-interest auctions with 1-tap heart bookmarks",
+    "⭐ Deal Trust Score & Ratings: 5-star mutual rating system upon vehicle handover"
   ],
-  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.4.1/ExchangeDesk_v3.4.1_Live.apk",
+  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.5.0/ExchangeDesk_v3.5.0_Live.apk",
   "isMandatory": false
 }
