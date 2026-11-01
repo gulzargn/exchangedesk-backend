@@ -11,7 +11,7 @@ export function createBuyersRouter(io) {
   router.get('/', async (req, res) => {
     try {
       const result = await query(
-        `SELECT id, business_name, phone, wallet_balance, is_verified, is_active, is_approved, created_at
+        `SELECT id, business_name, phone, wallet_balance, locked_emd, is_verified, is_active, is_approved, created_at
          FROM buyers
          WHERE is_approved = true AND is_active = true
          ORDER BY id ASC`
@@ -19,10 +19,16 @@ export function createBuyersRouter(io) {
 
       return res.json({
         success: true,
-        buyers: result.rows.map((b) => ({
-          ...b,
-          wallet_balance: parseFloat(b.wallet_balance),
-        })),
+        buyers: result.rows.map((b) => {
+          const wallet = parseFloat(b.wallet_balance || 0);
+          const locked = parseFloat(b.locked_emd || 0);
+          return {
+            ...b,
+            wallet_balance: wallet,
+            locked_emd: locked,
+            available_balance: Math.max(0, wallet - locked),
+          };
+        }),
       });
     } catch (err) {
       console.error('[API:getBuyers] Error:', err);
@@ -38,7 +44,7 @@ export function createBuyersRouter(io) {
     try {
       const { id } = req.params;
       const result = await query(
-        `SELECT id, business_name, phone, wallet_balance, is_verified, created_at
+        `SELECT id, business_name, phone, wallet_balance, locked_emd, is_verified, created_at
          FROM buyers
          WHERE id = $1`,
         [id]
@@ -49,11 +55,16 @@ export function createBuyersRouter(io) {
       }
 
       const buyer = result.rows[0];
+      const wallet = parseFloat(buyer.wallet_balance || 0);
+      const locked = parseFloat(buyer.locked_emd || 0);
+
       return res.json({
         success: true,
         buyer: {
           ...buyer,
-          wallet_balance: parseFloat(buyer.wallet_balance),
+          wallet_balance: wallet,
+          locked_emd: locked,
+          available_balance: Math.max(0, wallet - locked),
         },
       });
     } catch (err) {
@@ -187,6 +198,59 @@ export function createBuyersRouter(io) {
       });
     } catch (err) {
       console.error('[API:registerBuyer] Error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
+   * POST /api/buyers/:id/watchlist/toggle
+   * Toggles bookmark for an auction
+   */
+  router.post('/:id/watchlist/toggle', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { auction_id } = req.body;
+
+      if (!auction_id) {
+        return res.status(400).json({ error: 'Auction ID is required' });
+      }
+
+      const existing = await query(
+        'SELECT id FROM watchlist WHERE buyer_id = $1 AND auction_id = $2',
+        [id, auction_id]
+      );
+
+      if (existing.rows.length > 0) {
+        await query('DELETE FROM watchlist WHERE buyer_id = $1 AND auction_id = $2', [id, auction_id]);
+        return res.json({ success: true, watchlisted: false, message: 'Removed from Watchlist' });
+      } else {
+        await query(
+          'INSERT INTO watchlist (buyer_id, auction_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+          [id, auction_id]
+        );
+        return res.json({ success: true, watchlisted: true, message: 'Added to Watchlist ❤️' });
+      }
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
+   * GET /api/buyers/:id/watchlist
+   * Returns list of bookmarked auction IDs
+   */
+  router.get('/:id/watchlist', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = await query(
+        'SELECT auction_id FROM watchlist WHERE buyer_id = $1 ORDER BY created_at DESC',
+        [id]
+      );
+      return res.json({
+        success: true,
+        auctionIds: result.rows.map((r) => r.auction_id),
+      });
+    } catch (err) {
       return res.status(500).json({ error: err.message });
     }
   });

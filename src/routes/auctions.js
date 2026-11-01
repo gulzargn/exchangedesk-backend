@@ -5,6 +5,8 @@ import { maskRcNumber, sanitizeAuctionForBuyer } from '../utils/masking.js';
 import { config } from '../config.js';
 import { optimizeAuctionPhotos } from '../utils/imageStorage.js';
 import { optionalAuthenticateToken } from '../utils/auth.js';
+import { parseAndVerifyRc } from '../utils/rtoVerification.js';
+import { generateRtoAgreementHtml } from '../utils/rtoAgreementGenerator.js';
 
 export function createAuctionsRouter(io) {
   const router = express.Router();
@@ -45,6 +47,25 @@ export function createAuctionsRouter(io) {
             "UPDATE auctions SET status = 'CLOSED' WHERE id = $1 AND status = 'LIVE'",
             [auction.id]
           );
+
+          // EMD Token Lock: Lock ₹2,000 earnest money deposit from winning buyer
+          if (auction.highest_bidder_id) {
+            try {
+              const emdVal = 2000.00;
+              await query(
+                `UPDATE buyers SET locked_emd = locked_emd + $1 WHERE id = $2`,
+                [emdVal, auction.highest_bidder_id]
+              );
+              await query(
+                `UPDATE auctions SET emd_status = 'LOCKED', emd_amount = $1 WHERE id = $2`,
+                [emdVal, auction.id]
+              );
+              console.log(`[EMD:Locked] ₹${emdVal} EMD locked for Buyer #${auction.highest_bidder_id} on Auction #${auction.id}`);
+            } catch (emdErr) {
+              console.warn('[AutoClose EMD Lock Warning]:', emdErr.message);
+            }
+          }
+
           console.log(`[AutoClose] Auction #${auction.id} (${auction.vehicle_model}) expired. Winner: ${auction.winner_name || 'No bids placed'}`);
 
           if (io) {
@@ -154,12 +175,18 @@ export function createAuctionsRouter(io) {
       const engineSoundMedia = typeof engine_sound_video === 'string' ? engine_sound_video : '';
       const conditionReportJson = typeof condition_report === 'string' ? condition_report : JSON.stringify(condition_report || {});
 
+      // Automatic Vahan & RTO Verification Engine
+      const rtoVerification = parseAndVerifyRc(rc_number.trim(), year);
+      const rtoVerified = rtoVerification.valid;
+      const rtoDetailsJson = JSON.stringify(rtoVerification.valid ? rtoVerification : {});
+
       const insertRes = await query(
         `INSERT INTO auctions (
           showroom_id, vehicle_model, manufacturing_year, km_driven,
           rc_number, base_price, current_highest_bid, highest_bidder_id,
-          status, starts_at, ends_at, pickup_otp, photos, engine_sound_video, condition_report
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, NULL, 'LIVE', $8, $9, $10, $11, $12, $13)
+          status, starts_at, ends_at, pickup_otp, photos, engine_sound_video, condition_report,
+          rto_verified, rto_details, emd_amount, emd_status
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, NULL, 'LIVE', $8, $9, $10, $11, $12, $13, $14, $15, 2000.00, 'NONE')
         RETURNING *`,
         [
           showroomId,
@@ -175,6 +202,8 @@ export function createAuctionsRouter(io) {
           photosJson,
           engineSoundMedia,
           conditionReportJson,
+          rtoVerified,
+          rtoDetailsJson,
         ]
       );
 
@@ -241,6 +270,7 @@ export function createAuctionsRouter(io) {
                 a.base_price, a.current_highest_bid, a.highest_bidder_id, a.status,
                 a.starts_at, a.ends_at, a.created_at, a.pickup_otp, a.rc_number,
                 a.photos, a.engine_sound_video, a.condition_report,
+                a.rto_verified, a.rto_details, a.emd_amount, a.emd_status,
                 CASE WHEN a.engine_sound_video IS NOT NULL AND a.engine_sound_video != '' THEN true ELSE false END as has_engine_media,
                 s.name as showroom_name, s.address as showroom_address,
                 b.business_name as highest_bidder_name,
@@ -319,6 +349,11 @@ export function createAuctionsRouter(io) {
           highest_bid_buyer_name: auction.highest_bidder_name,
           condition_report: auction.condition_report || {},
           total_photos: totalPhotosCount,
+          rto_verified: auction.rto_verified || false,
+          rto_details: typeof auction.rto_details === 'string' ? JSON.parse(auction.rto_details || '{}') : (auction.rto_details || {}),
+          emd_amount: parseFloat(auction.emd_amount || 2000.0),
+          emd_status: auction.emd_status || 'NONE',
+          has_engine_media: Boolean(auction.engine_sound_video && auction.engine_sound_video.length > 0),
         };
 
         if (isOwnerShowroom) {
@@ -399,6 +434,24 @@ export function createAuctionsRouter(io) {
 
       if (auction.status === 'LIVE') {
         await query("UPDATE auctions SET status = 'CLOSED' WHERE id = $1", [id]);
+
+        if (auction.highest_bidder_id) {
+          try {
+            const emdVal = 2000.00;
+            await query(
+              `UPDATE buyers SET locked_emd = locked_emd + $1 WHERE id = $2`,
+              [emdVal, auction.highest_bidder_id]
+            );
+            await query(
+              `UPDATE auctions SET emd_status = 'LOCKED', emd_amount = $1 WHERE id = $2`,
+              [emdVal, auction.id]
+            );
+            console.log(`[EMD:Locked] ₹${emdVal} EMD locked for Buyer #${auction.highest_bidder_id} on Auction #${auction.id}`);
+          } catch (emdErr) {
+            console.warn('[Auction Close EMD Lock Warning]:', emdErr.message);
+          }
+        }
+
         invalidateActiveCache();
         console.log(`[Auction:Close] #${id} (${auction.vehicle_model}) closed. Winner: ${auction.winner_name || 'Counter'}`);
 
@@ -613,11 +666,20 @@ export function createAuctionsRouter(io) {
         [auction.id, buyer.id, fee]
       );
 
-      // 6. Update auction status to 'COMPLETED'
+      // 6. Update auction status to 'COMPLETED' and settle locked EMD
       await client.query(
-        "UPDATE auctions SET status = 'COMPLETED' WHERE id = $1",
+        "UPDATE auctions SET status = 'COMPLETED', emd_status = 'SETTLED' WHERE id = $1",
         [auction.id]
       );
+
+      // Unlock EMD from buyer wallet
+      if (auction.emd_status === 'LOCKED') {
+        const emdVal = parseFloat(auction.emd_amount || 2000.0);
+        await client.query(
+          'UPDATE buyers SET locked_emd = GREATEST(0, locked_emd - $1) WHERE id = $2',
+          [emdVal, buyer.id]
+        );
+      }
 
       // Commit transaction
       await client.query('COMMIT');
@@ -717,7 +779,7 @@ export function createAuctionsRouter(io) {
       }
 
       const buyerRes = await client.query(
-        'SELECT id, business_name, wallet_balance, is_verified, is_active FROM buyers WHERE id = $1 FOR UPDATE',
+        'SELECT id, business_name, wallet_balance, locked_emd, is_verified, is_active FROM buyers WHERE id = $1 FOR UPDATE',
         [buyerId]
       );
       if (buyerRes.rows.length === 0) throw new Error('Buyer account not found. Please register to bid.');
@@ -727,9 +789,11 @@ export function createAuctionsRouter(io) {
       if (!buyer.is_verified) throw new Error('Buyer account is pending Exchange Desk verification');
 
       const wallet = parseFloat(buyer.wallet_balance);
-      if (wallet < config.minWalletBalanceToBid) {
+      const lockedEmd = parseFloat(buyer.locked_emd || 0);
+      const available = wallet - lockedEmd;
+      if (available < config.minWalletBalanceToBid) {
         throw new Error(
-          `Insufficient wallet balance (₹${wallet.toLocaleString('en-IN')}). Minimum ₹${config.minWalletBalanceToBid.toLocaleString('en-IN')} required.`
+          `Insufficient available balance (₹${available.toLocaleString('en-IN')}). Minimum ₹${config.minWalletBalanceToBid.toLocaleString('en-IN')} available balance required (Locked EMD: ₹${lockedEmd.toLocaleString('en-IN')}).`
         );
       }
 
@@ -783,6 +847,101 @@ export function createAuctionsRouter(io) {
       return res.status(400).json({ success: false, error: err.message });
     } finally {
       client.release();
+    }
+  });
+
+  /**
+   * POST /api/auctions/verify-rc
+   * Instant Vahan & RTO Verification for Indian 2-wheelers
+   */
+  router.post('/verify-rc', (req, res) => {
+    try {
+      const { rc_number, manufacturing_year } = req.body;
+      if (!rc_number) {
+        return res.status(400).json({ success: false, error: 'Vehicle RC number is required' });
+      }
+      const result = parseAndVerifyRc(rc_number, manufacturing_year);
+      return res.json({
+        success: true,
+        verified: result.valid,
+        rtoData: result,
+      });
+    } catch (err) {
+      return res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  /**
+   * GET /api/auctions/:id/rto-agreement
+   * Generates statutory RTO Form 29 & 30 sale agreement with pre-filled parties & vehicle data.
+   */
+  router.get('/:id/rto-agreement', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { format } = req.query;
+
+      const aRes = await query('SELECT * FROM auctions WHERE id = $1', [id]);
+      if (aRes.rows.length === 0) return res.status(404).send('Auction not found');
+      const auction = aRes.rows[0];
+
+      const sRes = await query('SELECT * FROM showrooms WHERE id = $1', [auction.showroom_id]);
+      const showroom = sRes.rows[0] || {};
+
+      let buyer = {};
+      if (auction.highest_bidder_id) {
+        const bRes = await query('SELECT * FROM buyers WHERE id = $1', [auction.highest_bidder_id]);
+        buyer = bRes.rows[0] || {};
+      }
+
+      if (format === 'json') {
+        return res.json({
+          success: true,
+          agreementRef: `ED-RTO-${auction.id}`,
+          auction,
+          showroom,
+          buyer,
+        });
+      }
+
+      const html = generateRtoAgreementHtml({ auction, showroom, buyer });
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(html);
+    } catch (err) {
+      return res.status(500).send(`Failed to generate RTO Agreement: ${err.message}`);
+    }
+  });
+
+  /**
+   * POST /api/auctions/rate
+   * Deal Completion Rating (Showroom & Buyer mutual reviews)
+   */
+  router.post('/rate', async (req, res) => {
+    try {
+      const { auction_id, rater_role, rater_id, target_id, rating, feedback = '' } = req.body;
+
+      if (!auction_id || !rater_role || !rater_id || !target_id || !rating) {
+        return res.status(400).json({ error: 'Missing rating required fields' });
+      }
+
+      const numRating = parseInt(rating, 10);
+      if (isNaN(numRating) || numRating < 1 || numRating > 5) {
+        return res.status(400).json({ error: 'Rating must be between 1 and 5 stars' });
+      }
+
+      await query(
+        `INSERT INTO ratings (auction_id, rater_role, rater_id, target_id, rating, feedback)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (auction_id, rater_role)
+         DO UPDATE SET rating = $5, feedback = $6, created_at = NOW()`,
+        [auction_id, rater_role, rater_id, target_id, numRating, feedback.trim()]
+      );
+
+      return res.json({
+        success: true,
+        message: 'Review and rating submitted successfully! Thank you for building platform trust.',
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
     }
   });
 

@@ -28,6 +28,7 @@ CREATE TABLE buyers (
     business_name VARCHAR(255) NOT NULL,
     phone VARCHAR(20) UNIQUE NOT NULL,
     wallet_balance NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (wallet_balance >= 0),
+    locked_emd NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (locked_emd >= 0),
     pin VARCHAR(100) DEFAULT '1234',
     is_active BOOLEAN DEFAULT TRUE,
     is_verified BOOLEAN DEFAULT TRUE,
@@ -52,6 +53,11 @@ CREATE TABLE auctions (
     pickup_otp VARCHAR(6) NOT NULL,
     photos TEXT DEFAULT '[]',
     engine_sound_video TEXT DEFAULT '',
+    condition_report JSONB DEFAULT '{}',
+    emd_amount NUMERIC(12, 2) NOT NULL DEFAULT 2000.00,
+    emd_status VARCHAR(20) DEFAULT 'NONE' CHECK (emd_status IN ('NONE', 'LOCKED', 'SETTLED', 'FORFEITED')),
+    rto_verified BOOLEAN DEFAULT FALSE,
+    rto_details JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -96,6 +102,28 @@ CREATE TABLE announcements (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 8. Watchlist: Bookmarked auctions by buyers
+CREATE TABLE watchlist (
+    id SERIAL PRIMARY KEY,
+    buyer_id INTEGER NOT NULL REFERENCES buyers(id) ON DELETE CASCADE,
+    auction_id INTEGER NOT NULL REFERENCES auctions(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(buyer_id, auction_id)
+);
+
+-- 9. Ratings: Post-delivery reviews between Showroom & Buyer
+CREATE TABLE ratings (
+    id SERIAL PRIMARY KEY,
+    auction_id INTEGER NOT NULL REFERENCES auctions(id) ON DELETE CASCADE,
+    rater_role VARCHAR(20) NOT NULL,
+    rater_id INTEGER NOT NULL,
+    target_id INTEGER NOT NULL,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    feedback TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(auction_id, rater_role)
+);
+
 -- Indices for performance and real-time concurrency lookups
 CREATE INDEX idx_auctions_status_ends_at ON auctions(status, ends_at);
 CREATE INDEX idx_auctions_showroom_id ON auctions(showroom_id);
@@ -104,3 +132,5 @@ CREATE INDEX idx_bids_placed_at ON bids(placed_at DESC);
 CREATE INDEX idx_buyers_wallet_balance ON buyers(wallet_balance);
 CREATE INDEX idx_deposit_requests_status ON deposit_requests(status);
 CREATE INDEX idx_deposit_requests_buyer_id ON deposit_requests(buyer_id);
+CREATE INDEX idx_watchlist_buyer ON watchlist(buyer_id);
+CREATE INDEX idx_ratings_target ON ratings(target_id, rater_role);

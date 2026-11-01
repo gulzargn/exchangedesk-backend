@@ -826,6 +826,62 @@ export function createAdminRouter(io) {
   });
 
   /**
+   * POST /api/admin/auctions/:id/forfeit-emd
+   * Forfeits winning buyer's locked ₹2,000 EMD on no-show / default
+   */
+  router.post('/auctions/:id/forfeit-emd', async (req, res) => {
+    const { id } = req.params;
+    const client = await getClient();
+    try {
+      await client.query('BEGIN');
+      const aRes = await client.query('SELECT * FROM auctions WHERE id = $1 FOR UPDATE', [id]);
+      if (aRes.rows.length === 0) throw new Error('Auction not found');
+      const auction = aRes.rows[0];
+
+      if (!auction.highest_bidder_id) {
+        throw new Error('No winning bidder exists for this auction to forfeit EMD from');
+      }
+
+      const emdAmount = parseFloat(auction.emd_amount || 2000.0);
+
+      // Deduct from buyer wallet balance AND remove from locked_emd
+      await client.query(
+        'UPDATE buyers SET wallet_balance = GREATEST(0, wallet_balance - $1), locked_emd = GREATEST(0, locked_emd - $1) WHERE id = $2',
+        [emdAmount, auction.highest_bidder_id]
+      );
+
+      // Update auction
+      await client.query(
+        "UPDATE auctions SET emd_status = 'FORFEITED', status = 'CANCELLED' WHERE id = $1",
+        [id]
+      );
+
+      // Log transaction
+      await client.query(
+        `INSERT INTO platform_transactions (auction_id, buyer_id, amount, fee_type, created_at)
+         VALUES ($1, $2, $3, 'EMD_FORFEITED_PENALTY', NOW())`,
+        [id, auction.highest_bidder_id, emdAmount]
+      );
+
+      await client.query('COMMIT');
+
+      if (io) {
+        io.emit('auction_updated', { auctionId: parseInt(id, 10), status: 'CANCELLED', emdStatus: 'FORFEITED' });
+      }
+
+      return res.json({
+        success: true,
+        message: `₹${emdAmount.toLocaleString('en-IN')} EMD forfeited due to winning buyer default. Auction cancelled.`,
+      });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, error: err.message });
+    } finally {
+      client.release();
+    }
+  });
+
+  /**
    * POST /api/admin/config
    * Updates platform rules dynamically
    */

@@ -1167,13 +1167,16 @@ function renderAuctions() {
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <span style="font-size:13px;font-weight:900;color:#fff">#${a.id} — ${a.vehicle_model}</span>
             ${badgeHtml(a.status)}
+            ${a.rto_verified ? '<span style="background:#064e3b;color:#34d399;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;border:1px solid #059669">🛡️ RTO Verified • 0 Challan</span>' : ''}
             <a href="${rcUrl}" target="_blank" class="btn btn-slate" style="padding:2px 6px;font-size:10px" title="Check RC on Parivahan">🔍 ${a.rc_number||'RC'}</a>
+            <a href="/api/auctions/${a.id}/rto-agreement" target="_blank" class="btn btn-slate" style="padding:2px 6px;font-size:10px;color:#fbbf24;border-color:#b45309" title="View & Print Form 29 & 30 Statutory Agreement">📄 Form 29/30</a>
           </div>
           <div style="font-size:11px;color:#64748b;margin-top:4px">🏢 ${a.showroom_name} | ${a.manufacturing_year||'2022'} | ${(a.km_driven||0).toLocaleString()} KM</div>
-          <div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap">
+          <div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap;align-items:center">
             <div style="font-size:11px"><span style="color:#64748b">Base: </span><span style="color:#94a3b8;font-weight:700">${inr(a.base_price)}</span></div>
             <div style="font-size:11px"><span style="color:#64748b">Current: </span><span style="color:#34d399;font-weight:900">${inr(a.current_highest_bid)}</span></div>
             <div style="font-size:11px"><span style="color:#64748b">Bids: </span><span style="color:#a78bfa;font-weight:700">${a.total_bids}</span></div>
+            ${a.emd_status === 'LOCKED' ? '<div style="font-size:10px;color:#fbbf24;background:#78350f;padding:2px 6px;border-radius:4px;font-weight:700">🔒 EMD ₹2,000 Locked</div>' : (a.emd_status === 'SETTLED' ? '<div style="font-size:10px;color:#34d399;background:#064e3b;padding:2px 6px;border-radius:4px;font-weight:700">✅ EMD Settled</div>' : (a.emd_status === 'FORFEITED' ? '<div style="font-size:10px;color:#f87171;background:#7f1d1d;padding:2px 6px;border-radius:4px;font-weight:700">❌ EMD Forfeited</div>' : ''))}
           </div>
           ${a.highest_bidder_name ? `<div style="font-size:11px;color:#64748b;margin-top:3px">🏆 Leader/Winner: <span style="color:#fbbf24;font-weight:600">${a.highest_bidder_name}</span> (${a.bidder_phone||'--'})</div>` : ''}
           ${a.status === 'LIVE' ? `<div style="margin-top:6px;display:flex;align-items:center;gap:6px"><span class="live-dot"></span><span style="font-size:11px;color:#64748b">Ends in: </span><span class="countdown" data-ends-at="${endsAtMs}">--:--</span></div>` : `<div style="font-size:11px;color:#64748b;margin-top:4px">📅 ${fmt(a.ends_at)}</div>`}
@@ -1186,6 +1189,7 @@ function renderAuctions() {
           <button onclick="forceClose(${a.id},'${a.vehicle_model.replace(/'/g,"\\'")}',this)" class="btn btn-slate">🔒 Close</button>
           <button onclick="cancelAuction(${a.id},'${a.vehicle_model.replace(/'/g,"\\'")}',this)" class="btn btn-red">❌ Cancel</button>
           ` : (a.status !== 'COMPLETED' && a.status !== 'CANCELLED' ? `
+          ${a.emd_status === 'LOCKED' ? `<button onclick="forfeitEmd(${a.id},'${a.vehicle_model.replace(/'/g,"\\'")}',this)" class="btn btn-red" style="font-size:10px" title="Forfeit ₹2,000 EMD for no-show buyer">⚠️ Forfeit EMD</button>` : ''}
           <button onclick="cancelAuction(${a.id},'${a.vehicle_model.replace(/'/g,"\\'")}',this)" class="btn btn-red">❌ Cancel</button>
           ` : '')}
         </div>
@@ -1237,6 +1241,14 @@ async function cancelAuction(id, name, btn) {
   const d = await apiFetch(`/api/admin/auctions/${id}/cancel`, { method:'POST', body: JSON.stringify({ reason: reason||'Cancelled by Admin' }) });
   if (d.success) { toast(d.message, 'success'); loadAuctions(); loadStats(); }
   else { toast(d.error,'error'); btn.disabled=false; btn.textContent='❌ Cancel'; }
+}
+
+async function forfeitEmd(id, name, btn) {
+  if (!await confirmAction(`⚠️ Forfeit ₹2,000 EMD for auction "${name}" due to winning buyer no-show default?\nThis will cancel the auction and permanently deduct ₹2,000 penalty from buyer wallet.`)) return;
+  btn.disabled=true; btn.textContent='...';
+  const d = await apiFetch(`/api/admin/auctions/${id}/forfeit-emd`, { method:'POST', body: JSON.stringify({ reason: 'Buyer Default' }) });
+  if (d.success) { toast(d.message, 'success'); loadAuctions(); loadStats(); }
+  else { toast(d.error,'error'); btn.disabled=false; btn.textContent='⚠️ Forfeit EMD'; }
 }
 
 // ═══════════════════════════════════════════════════════

@@ -88,7 +88,38 @@ export async function initDatabase() {
       await pool.query("ALTER TABLE auctions ADD COLUMN IF NOT EXISTS photos TEXT DEFAULT '[]'");
       await pool.query("ALTER TABLE auctions ADD COLUMN IF NOT EXISTS engine_sound_video TEXT DEFAULT ''");
       await pool.query("ALTER TABLE auctions ADD COLUMN IF NOT EXISTS condition_report JSONB DEFAULT '{}'");
-    } catch (_) {}
+      await pool.query("ALTER TABLE buyers ADD COLUMN IF NOT EXISTS locked_emd NUMERIC(12, 2) NOT NULL DEFAULT 0.00");
+      await pool.query("ALTER TABLE auctions ADD COLUMN IF NOT EXISTS emd_amount NUMERIC(12, 2) NOT NULL DEFAULT 2000.00");
+      await pool.query("ALTER TABLE auctions ADD COLUMN IF NOT EXISTS emd_status VARCHAR(20) DEFAULT 'NONE'");
+      await pool.query("ALTER TABLE auctions ADD COLUMN IF NOT EXISTS rto_verified BOOLEAN DEFAULT FALSE");
+      await pool.query("ALTER TABLE auctions ADD COLUMN IF NOT EXISTS rto_details JSONB DEFAULT '{}'");
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS watchlist (
+          id SERIAL PRIMARY KEY,
+          buyer_id INTEGER NOT NULL REFERENCES buyers(id) ON DELETE CASCADE,
+          auction_id INTEGER NOT NULL REFERENCES auctions(id) ON DELETE CASCADE,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(buyer_id, auction_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_watchlist_buyer ON watchlist(buyer_id);
+
+        CREATE TABLE IF NOT EXISTS ratings (
+          id SERIAL PRIMARY KEY,
+          auction_id INTEGER NOT NULL REFERENCES auctions(id) ON DELETE CASCADE,
+          rater_role VARCHAR(20) NOT NULL,
+          rater_id INTEGER NOT NULL,
+          target_id INTEGER NOT NULL,
+          rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+          feedback TEXT,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(auction_id, rater_role)
+        );
+        CREATE INDEX IF NOT EXISTS idx_ratings_target ON ratings(target_id, rater_role);
+      `);
+    } catch (migErr) {
+      console.warn('[DB Migration Warning]:', migErr.message);
+    }
 
     // Check if tables exist, if not run schema
     const checkRes = await pool.query(
