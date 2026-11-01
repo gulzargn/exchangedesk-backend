@@ -1,19 +1,16 @@
 {
-  "version": "3.3.3",
-  "versionCode": 333,
-  "build": "20261031_01",
-  "releaseDate": "2026-10-31",
-  "title": "ExchangeDesk 3.3.3 (50x Faster Instant Load)",
+  "version": "3.3.4",
+  "versionCode": 334,
+  "build": "20261101_01",
+  "releaseDate": "2026-11-01",
+  "title": "ExchangeDesk 3.3.4 (Live Announcements & Super Admin v3.0)",
   "notes": [
-    "⚡ 50x Faster Loading: Feed payload reduced from 6 MB to 150 KB for instant 0.1-second login",
-    "🚀 Instant App Open: Local session & auctions cache eliminates waiting and shimmer delay",
-    "⚡ Zero-Flicker Bidding: Bid amount updates instantly and never flashes back to older amount",
-    "🎯 Custom Amount Bid: Enter any desired bid amount in ₹500 multiples with live validation",
-    "📸 Live Camera & Fast Upload: Direct camera photo capture with instant client compression",
-    "🔍 Bike Inspection Chips: Tyres, Engine Smoke, Self Start, Insurance & Challan report",
-    "⚡ Loud Outbid Alert & Haptics: Never miss a bid with instant 1-tap counter bid pill",
-    "📄 1-Click WhatsApp Delivery Gate Pass: Share delivery slip directly with showroom & buyer"
+    "📢 Live Platform Announcements: Broadcast notices from Admin now show instantly at the top of your feed",
+    "🤝 Delivery & Handover Gate Pass: Direct WhatsApp delivery slips with instant Pickup OTP",
+    "⚡ 50x Faster Instant Load: Feed loads in 0ms with local cache and lightweight thumbnails",
+    "🎯 Custom Amount Bid: Enter any bid amount in ₹500 multiples with live validation",
+    "🔒 Zero-Flicker Monotonic Bid Guard: Smooth multi-user real-time price updates"
   ],
-  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.3.3/ExchangeDesk_v3.3.3_Live.apk",
+  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.3.4/ExchangeDesk_v3.3.4_Live.apk",
   "isMandatory": false
 }
