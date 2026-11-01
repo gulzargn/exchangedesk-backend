@@ -57,21 +57,7 @@ app.use('/api/admin', createAdminRouter(io));
 // In-App Auto-Update Version Endpoint
 app.get(['/api/version', '/api/app/version', '/version'], (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.json({
-    version: '2.2.0',
-    versionCode: 220,
-    releaseDate: '2026-10-24',
-    title: 'Naya ExchangeDesk Update Available!',
-    notes: [
-      '⚡ Bid Confirmation Modal (Accidental Click Protection)',
-      'Direct 1-Click In-App APK Updates',
-      '0-Second Instant Live Bidding Engine',
-      'Auto Winner & Instant Delivery OTP',
-      'Exchange Desk Verified Counter Approvals'
-    ],
-    apkUrl: 'https://github.com/gulzargn/exchangedesk-backend/releases/latest/download/ExchangeDesk_v3.2_Live.apk',
-    isMandatory: false
-  });
+  res.sendFile(path.resolve(__dirname, '../public/version.json'));
 });
 
 // Public Live Announcements Endpoint for Flutter App & Web Feed

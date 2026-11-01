@@ -21,7 +21,7 @@ export function createAuthRouter() {
       // ======================================================================
       if (role === 'admin') {
         const pass = (password || pin || '').toString().trim();
-        const validAdminPass = ['Gulzar@1013', '1013', 'admin123', 'admin'];
+        const validAdminPass = ['Gulzar@1013'];
 
         if (!validAdminPass.includes(pass)) {
           return res.status(401).json({ error: 'Invalid Administrator Security Key / Password' });
@@ -81,7 +81,7 @@ export function createAuthRouter() {
 
         // Check PIN / Password
         const dbPin = (showroom.pin || '1234').toString().trim();
-        if (inputPin !== dbPin && inputPin !== '1234' && inputPin !== 'Gulzar@1013') {
+        if (inputPin !== dbPin && inputPin !== 'Gulzar@1013') {
           return res.status(401).json({ error: 'Incorrect Showroom PIN / Security Code' });
         }
 
@@ -141,7 +141,7 @@ export function createAuthRouter() {
 
         // Check PIN / Password
         const dbPin = (buyer.pin || '1234').toString().trim();
-        if (inputPin !== dbPin && inputPin !== '1234' && inputPin !== 'Gulzar@1013') {
+        if (inputPin !== dbPin && inputPin !== 'Gulzar@1013') {
           return res.status(401).json({ error: 'Incorrect Buyer PIN' });
         }
 
@@ -184,11 +184,11 @@ export function createAuthRouter() {
       if (role === 'showroom') {
         const showroomName = (name || business_name || '').trim();
         const showroomPhone = (phone || '').trim();
-        const showroomAddress = (address || '').trim();
+        const showroomAddress = (address || req.body.city || '').trim();
         const showroomPin = (pin || '1234').toString().trim();
 
         if (!showroomName || !showroomPhone || !showroomAddress) {
-          return res.status(400).json({ error: 'Showroom name, phone number, and branch address are required' });
+          return res.status(400).json({ error: 'Showroom name, phone number, and branch address/city are required' });
         }
 
         const check = await query('SELECT id FROM showrooms WHERE phone = $1', [showroomPhone]);
@@ -207,6 +207,7 @@ export function createAuthRouter() {
           pendingApproval: true,
           message: 'Showroom counter registered! Exchange Desk approval pending hai. Exchange Desk approve karega tabhi login kar sakte hain.',
           showroom: newShowroom,
+          user: newShowroom,
         });
       }
 
@@ -215,7 +216,7 @@ export function createAuthRouter() {
         const bizName = (business_name || name || '').trim();
         const buyerPhone = (phone || '').trim();
         const buyerPin = (pin || '1234').toString().trim();
-        const deposit = Math.max(parseFloat(initial_deposit) || 5000, 3000);
+        const deposit = 0.00; // In production, initial wallet balance starts at 0 until verified deposit approval
 
         if (!bizName || !buyerPhone) {
           return res.status(400).json({ error: 'Business name and contact phone number are required' });
@@ -237,6 +238,7 @@ export function createAuthRouter() {
           pendingApproval: true,
           message: 'Buyer account registered! Exchange Desk approval pending hai. Exchange Desk approve karega tabhi ID activate hogi.',
           buyer: newBuyer,
+          user: newBuyer,
         });
       }
 
