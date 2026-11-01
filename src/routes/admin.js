@@ -869,5 +869,125 @@ export function createAdminRouter(io) {
     });
   });
 
+  /**
+   * GET /api/admin/showrooms
+   * All showrooms with auction counts
+   */
+  router.get('/showrooms', async (req, res) => {
+    try {
+      const result = await query(
+        `SELECT s.id, s.name, s.phone, s.address, s.is_active, s.is_approved, s.created_at,
+                COALESCE(ac.auction_count, 0) as total_auctions,
+                COALESCE(lc.live_count, 0) as live_auctions
+         FROM showrooms s
+         LEFT JOIN (SELECT showroom_id, COUNT(*) as auction_count FROM auctions GROUP BY showroom_id) ac ON ac.showroom_id = s.id
+         LEFT JOIN (SELECT showroom_id, COUNT(*) as live_count FROM auctions WHERE status = 'LIVE' GROUP BY showroom_id) lc ON lc.showroom_id = s.id
+         ORDER BY s.id ASC`
+      );
+      return res.json({ success: true, showrooms: result.rows });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
+   * POST /api/admin/showrooms/:id/reset-pin
+   */
+  router.post('/showrooms/:id/reset-pin', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { newPin } = req.body;
+      if (!newPin || newPin.toString().length < 4) return res.status(400).json({ error: 'PIN must be at least 4 digits' });
+      const sRes = await query('SELECT id, name FROM showrooms WHERE id = $1', [id]);
+      if (sRes.rows.length === 0) return res.status(404).json({ error: 'Showroom not found' });
+      await query('UPDATE showrooms SET pin = $1 WHERE id = $2', [newPin.toString(), id]);
+      return res.json({ success: true, message: `PIN reset for showroom "${sRes.rows[0].name}"` });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
+   * POST /api/admin/buyers/:id/reset-pin
+   */
+  router.post('/buyers/:id/reset-pin', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { newPin } = req.body;
+      if (!newPin || newPin.toString().length < 4) return res.status(400).json({ error: 'PIN must be at least 4 digits' });
+      const bRes = await query('SELECT id, business_name FROM buyers WHERE id = $1', [id]);
+      if (bRes.rows.length === 0) return res.status(404).json({ error: 'Buyer not found' });
+      await query('UPDATE buyers SET pin = $1 WHERE id = $2', [newPin.toString(), id]);
+      return res.json({ success: true, message: `PIN reset for buyer "${bRes.rows[0].business_name}"` });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
+   * POST /api/admin/buyers/create
+   * Admin directly creates & approves a buyer
+   */
+  router.post('/buyers/create', async (req, res) => {
+    try {
+      const { business_name, phone, pin = '1234', initial_balance = 0 } = req.body;
+      if (!business_name || !phone) return res.status(400).json({ error: 'business_name and phone required' });
+      const check = await query('SELECT id FROM buyers WHERE phone = $1', [phone.trim()]);
+      if (check.rows.length > 0) return res.status(400).json({ error: 'Phone number already registered' });
+      const r = await query(
+        `INSERT INTO buyers (business_name, phone, pin, wallet_balance, is_approved, is_active, is_verified)
+         VALUES ($1, $2, $3, $4, true, true, true) RETURNING *`,
+        [business_name.trim(), phone.trim(), pin.toString(), parseFloat(initial_balance)]
+      );
+      return res.status(201).json({ success: true, message: 'Buyer created and approved', buyer: r.rows[0] });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
+   * GET /api/admin/deposit-history
+   * Full deposit history (pending + approved + rejected)
+   */
+  router.get('/deposit-history', async (req, res) => {
+    try {
+      const result = await query(
+        `SELECT d.id, d.buyer_id, d.amount, d.payment_method, d.reference_id, d.status, d.admin_notes, d.created_at, d.reviewed_at,
+                b.business_name, b.phone, b.wallet_balance as current_wallet
+         FROM deposit_requests d
+         JOIN buyers b ON d.buyer_id = b.id
+         ORDER BY d.created_at DESC
+         LIMIT 300`
+      );
+      return res.json({
+        success: true,
+        deposits: result.rows.map(d => ({ ...d, amount: parseFloat(d.amount), current_wallet: parseFloat(d.current_wallet) }))
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
+   * POST /api/admin/showrooms/create (override already exists but via createShowroom)
+   * alias already handled above, adding buyer stats endpoint
+   * GET /api/admin/activity - recent platform activity (bids + approvals)
+   */
+  router.get('/activity', async (req, res) => {
+    try {
+      const bids = await query(
+        `SELECT 'BID' as type, b.amount::text as detail, b.placed_at as ts,
+                buy.business_name as actor, a.vehicle_model as subject
+         FROM bids b
+         JOIN buyers buy ON b.buyer_id = buy.id
+         JOIN auctions a ON b.auction_id = a.id
+         ORDER BY b.placed_at DESC LIMIT 15`
+      );
+      return res.json({ success: true, activity: bids.rows });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   return router;
 }

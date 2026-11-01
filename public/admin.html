@@ -2,442 +2,1163 @@
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>ExchangeDesk — Super Admin Control Hub</title>
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ExchangeDesk — Super Admin v2.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: { 500: '#10b981', 600: '#059669', 700: '#047857' }
-          }
-        }
-      }
+      theme: { extend: { colors: { brand: { 500: '#10b981', 600: '#059669' } } } }
     }
   </script>
-  
-  <script src="/socket.io/socket.io.js"></script>
-  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #060c18; font-family: 'Segoe UI', system-ui, sans-serif; }
+    .card { background: #0d1526; border: 1px solid #1e2d4a; border-radius: 14px; }
+    .sidebar-link { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; font-size:13px; font-weight:600; color:#94a3b8; cursor:pointer; transition:all .15s; margin-bottom:2px; }
+    .sidebar-link:hover { background:#13203a; color:#e2e8f0; }
+    .sidebar-link.active { background:#1a2e50; color:#fff; border-left:3px solid #7c3aed; padding-left:11px; }
+    .badge-live { background:#064e3b; color:#34d399; border:1px solid #065f46; }
+    .badge-closed { background:#1e293b; color:#94a3b8; }
+    .badge-completed { background:#0c4a6e; color:#38bdf8; }
+    .badge-cancelled { background:#450a0a; color:#fca5a5; }
+    .badge-pending { background:#422006; color:#fbbf24; }
+    .badge-approved { background:#064e3b; color:#34d399; }
+    .badge-rejected { background:#450a0a; color:#fca5a5; }
+    .btn { padding:6px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; transition:all .15s; border:none; }
+    .btn:active { transform:scale(.95); }
+    .btn-green { background:#065f46; color:#34d399; }
+    .btn-green:hover { background:#047857; }
+    .btn-red { background:#450a0a; color:#fca5a5; }
+    .btn-red:hover { background:#7f1d1d; }
+    .btn-purple { background:#3b0764; color:#d8b4fe; }
+    .btn-purple:hover { background:#4c1d95; }
+    .btn-blue { background:#0c2a4e; color:#7dd3fc; }
+    .btn-blue:hover { background:#0369a1; }
+    .btn-amber { background:#422006; color:#fbbf24; }
+    .btn-amber:hover { background:#78350f; }
+    .btn-slate { background:#1e293b; color:#94a3b8; }
+    .btn-slate:hover { background:#334155; color:#e2e8f0; }
+    .inp { width:100%; background:#0a111f; border:1px solid #1e2d4a; border-radius:8px; padding:8px 12px; color:#e2e8f0; font-size:12px; outline:none; }
+    .inp:focus { border-color:#7c3aed; }
+    .kpi-card { background:#0d1526; border:1px solid #1e2d4a; border-radius:12px; padding:16px; }
+    #toast-container { position:fixed; bottom:24px; right:16px; z-index:9999; display:flex; flex-direction:column; gap:8px; pointer-events:none; max-width:320px; }
+    .toast { padding:12px 16px; border-radius:10px; font-size:12px; font-weight:600; color:#fff; animation:slideIn .3s ease; pointer-events:all; box-shadow:0 4px 24px rgba(0,0,0,.5); }
+    .toast-success { background:#065f46; border:1px solid #059669; }
+    .toast-error { background:#7f1d1d; border:1px solid #ef4444; }
+    .toast-info { background:#1e3a5f; border:1px solid #3b82f6; }
+    @keyframes slideIn { from { transform:translateX(120%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+    @keyframes slideOut { from { transform:translateX(0); opacity:1; } to { transform:translateX(120%); opacity:0; } }
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.8); backdrop-filter:blur(4px); z-index:5000; display:flex; align-items:center; justify-content:center; padding:16px; }
+    .modal-box { background:#0d1526; border:1px solid #2d3f5e; border-radius:16px; padding:24px; width:100%; max-width:420px; position:relative; }
+    .stat-val { font-size:22px; font-weight:900; font-variant-numeric:tabular-nums; }
+    .section { display:none; }
+    .section.active-section { display:block; }
+    input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+    ::-webkit-scrollbar { width:4px; height:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:#1e2d4a; border-radius:2px; }
+    .live-dot { width:8px; height:8px; border-radius:50%; background:#34d399; display:inline-block; animation:pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+    .countdown { font-family:monospace; font-weight:900; font-size:13px; }
+    .search-inp { background:#0a111f; border:1px solid #1e2d4a; border-radius:8px; padding:7px 12px; color:#e2e8f0; font-size:12px; outline:none; width:100%; max-width:260px; }
+    .search-inp:focus { border-color:#7c3aed; }
+    .tbl-row { border-bottom:1px solid #1a2640; padding:10px 12px; font-size:12px; }
+    .tbl-row:last-child { border-bottom:none; }
+    .tbl-row:hover { background:#0f1d35; }
+    .action-group { display:flex; gap:4px; flex-wrap:wrap; align-items:center; }
+  </style>
 </head>
-<body class="bg-[#070b14] text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-purple-500 selection:text-white">
+<body>
 
-  <!-- ==================================================================== -->
-  <!-- ADMIN AUTHENTICATION GATE (LOCK SCREEN) -->
-  <!-- ==================================================================== -->
-  <div id="adminAuthGate" class="fixed inset-0 z-50 bg-[#070b14] flex items-center justify-center p-4">
-    <div class="glass-panel w-full max-w-sm p-6 rounded-3xl border border-purple-500/30 shadow-2xl space-y-5 text-center">
-      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 mx-auto">
-        <svg class="w-8 h-8 text-white font-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-        </svg>
-      </div>
-      <div>
-        <h1 class="text-xl font-extrabold text-white">Super Admin Control Hub</h1>
-        <p class="text-xs text-slate-400 mt-1">ExchangeDesk Authoritative Administration</p>
-      </div>
-      <form id="formAdminLogin" class="space-y-3 text-xs text-left">
-        <div>
-          <label class="block text-slate-300 font-bold mb-1">Master Password / Security Key</label>
-          <input type="password" id="inputAdminPassword" required placeholder="Enter Admin Password" value="Gulzar@1013" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white outline-none focus:ring-2 focus:ring-purple-500 font-mono">
-        </div>
-        <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 text-white font-black text-xs shadow-md active:scale-95 transition">
-          Unlock Super Admin Console
-        </button>
-      </form>
-      <div class="text-[10px] text-slate-500">
-        Return to <a href="/" class="text-purple-400 hover:underline">Mobile App</a>
-      </div>
+<!-- AUTH GATE -->
+<div id="authGate" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background:#060c18">
+  <div class="card w-full max-w-sm p-7 text-center space-y-5" style="border-color:#3b0764">
+    <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#7c3aed,#ec4899);display:flex;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 0 32px #7c3aed55">
+      <svg width="28" height="28" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
     </div>
+    <div>
+      <h1 style="font-size:20px;font-weight:900;color:#fff">ExchangeDesk Admin</h1>
+      <p style="font-size:11px;color:#64748b;margin-top:4px">Super Admin Control Hub v2.0</p>
+    </div>
+    <form id="loginForm" style="text-align:left" onsubmit="doLogin(event)">
+      <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px">Master Password</label>
+      <input type="password" id="loginPwd" class="inp" placeholder="Enter admin password" value="Gulzar@1013" style="margin-bottom:12px">
+      <button type="submit" style="width:100%;padding:11px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#ec4899);color:#fff;font-weight:900;font-size:13px;border:none;cursor:pointer">Unlock Admin Console →</button>
+    </form>
+    <a href="/" style="font-size:10px;color:#475569">← Back to Mobile App</a>
   </div>
+</div>
 
-  <!-- ==================================================================== -->
-  <!-- ADMIN MAIN CONSOLE (DISPLAYED AFTER AUTH) -->
-  <!-- ==================================================================== -->
-  <div id="adminAppWrapper" class="flex-1 flex flex-col hidden">
-    
-    <!-- Top Super Admin Navigation Header -->
-    <header class="sticky top-0 z-40 bg-[#0c1220]/95 backdrop-blur-md border-b border-slate-800 px-4 sm:px-8 py-3.5 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <img src="logo.png" alt="ExchangeDesk Logo" class="w-10 h-10 rounded-xl object-contain bg-[#091124] border border-blue-500/30 shadow-md">
+<!-- MAIN APP -->
+<div id="app" style="display:none;min-height:100vh">
+
+  <!-- SIDEBAR + CONTENT LAYOUT -->
+  <div style="display:flex;min-height:100vh">
+
+    <!-- SIDEBAR (desktop) -->
+    <aside id="sidebar" style="width:220px;min-width:220px;background:#080f1e;border-right:1px solid #1a2640;padding:16px 10px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto" class="hidden lg:flex flex-col">
+      <div style="padding:10px 6px 20px">
+        <div style="font-size:15px;font-weight:900;color:#fff">ExchangeDesk</div>
+        <div style="font-size:10px;color:#475569;margin-top:2px">Super Admin v2.0</div>
+      </div>
+      <nav style="flex:1" id="sidebarNav">
+        <div class="sidebar-link active" onclick="switchTab('dashboard')">📊 <span>Dashboard</span></div>
+        <div class="sidebar-link" onclick="switchTab('approvals')">⏳ <span>Approvals</span> <span id="sidebarApprovalBadge" style="margin-left:auto;background:#d97706;color:#000;border-radius:99px;padding:1px 7px;font-size:10px;display:none">0</span></div>
+        <div class="sidebar-link" onclick="switchTab('auctions')">⚡ <span>Live Auctions</span> <span id="sidebarLiveBadge" style="margin-left:auto;background:#059669;color:#000;border-radius:99px;padding:1px 7px;font-size:10px;display:none">0</span></div>
+        <div class="sidebar-link" onclick="switchTab('deposits')">💳 <span>Deposits</span></div>
+        <div class="sidebar-link" onclick="switchTab('buyers')">👥 <span>Buyers</span></div>
+        <div class="sidebar-link" onclick="switchTab('showrooms')">🏢 <span>Showrooms</span></div>
+        <div class="sidebar-link" onclick="switchTab('ledger')">💰 <span>Fee Ledger</span></div>
+        <div class="sidebar-link" onclick="switchTab('settings')">⚙️ <span>Settings</span></div>
+      </nav>
+      <div style="border-top:1px solid #1a2640;padding-top:12px;margin-top:8px">
+        <div style="font-size:10px;color:#475569;margin-bottom:8px">Logged in as <span style="color:#a78bfa">Super Admin</span></div>
+        <button onclick="doLogout()" class="btn btn-red" style="width:100%">🚪 Logout</button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main style="flex:1;overflow-y:auto;padding:20px;max-width:100%">
+
+      <!-- MOBILE HEADER -->
+      <div class="lg:hidden" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:15px;font-weight:900;color:#fff">🔐 Admin Hub</div>
+        <button onclick="doLogout()" class="btn btn-red" style="font-size:10px">Logout</button>
+      </div>
+
+      <!-- MOBILE NAV TABS -->
+      <div class="lg:hidden" style="display:flex;gap:4px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px" id="mobileNav">
+        <button onclick="switchTab('dashboard')" class="btn btn-purple" style="white-space:nowrap;font-size:10px">📊</button>
+        <button onclick="switchTab('approvals')" class="btn btn-amber" style="white-space:nowrap;font-size:10px">⏳ Approvals</button>
+        <button onclick="switchTab('auctions')" class="btn btn-green" style="white-space:nowrap;font-size:10px">⚡ Auctions</button>
+        <button onclick="switchTab('deposits')" class="btn btn-blue" style="white-space:nowrap;font-size:10px">💳 Deposits</button>
+        <button onclick="switchTab('buyers')" class="btn btn-slate" style="white-space:nowrap;font-size:10px">👥 Buyers</button>
+        <button onclick="switchTab('showrooms')" class="btn btn-slate" style="white-space:nowrap;font-size:10px">🏢 Showrooms</button>
+        <button onclick="switchTab('ledger')" class="btn btn-slate" style="white-space:nowrap;font-size:10px">💰 Ledger</button>
+        <button onclick="switchTab('settings')" class="btn btn-slate" style="white-space:nowrap;font-size:10px">⚙️</button>
+      </div>
+
+      <!-- PENDING ALERT BANNER -->
+      <div id="pendingBanner" style="display:none;background:#422006;border:1px solid #d97706;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
         <div>
-          <div class="flex items-center space-x-2">
-            <span class="text-base font-extrabold text-white">ExchangeDesk</span>
-            <span class="px-2 py-0.5 text-[9px] font-black uppercase rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/30">
-              Super Admin Hub
-            </span>
+          <div style="font-size:13px;font-weight:700;color:#fbbf24">⚠️ Pending Approvals Required</div>
+          <div style="font-size:11px;color:#d97706;margin-top:2px" id="pendingBannerText">Loading...</div>
+        </div>
+        <button onclick="switchTab('approvals')" class="btn btn-amber">Review Now →</button>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════ -->
+      <!-- SECTION: DASHBOARD -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <section id="sec-dashboard" class="section active-section">
+        <h2 style="font-size:16px;font-weight:900;color:#fff;margin-bottom:16px">📊 Dashboard</h2>
+
+        <!-- KPI GRID -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px" id="kpiGrid">
+          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Fee Revenue</div><div class="stat-val" style="color:#34d399" id="kRevenue">₹0</div><div style="font-size:10px;color:#475569">₹500 / handover</div></div>
+          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Total GMV</div><div class="stat-val" style="color:#e2e8f0" id="kGmv">₹0</div><div style="font-size:10px;color:#475569">Settled deals</div></div>
+          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Live Auctions</div><div class="stat-val" style="color:#38bdf8" id="kLive">0</div><div style="font-size:10px;color:#475569" id="kTotalAuctions">0 total</div></div>
+          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Buyers</div><div class="stat-val" style="color:#c084fc" id="kBuyers">0</div><div style="font-size:10px;color:#475569" id="kVerifiedBuyers">0 verified</div></div>
+          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Showrooms</div><div class="stat-val" style="color:#fb923c" id="kShowrooms">0</div><div style="font-size:10px;color:#475569">Active desks</div></div>
+          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">System Liquidity</div><div class="stat-val" style="color:#a78bfa" id="kLiquidity">₹0</div><div style="font-size:10px;color:#475569">In buyer wallets</div></div>
+          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Total Bids</div><div class="stat-val" style="color:#f472b6" id="kBids">0</div><div style="font-size:10px;color:#475569">All time</div></div>
+          <div class="kpi-card" style="border-color:#d97706" onclick="switchTab('approvals')" id="kPendingCard"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Pending</div><div class="stat-val" style="color:#fbbf24" id="kPending">0</div><div style="font-size:10px;color:#d97706">Click to review</div></div>
+        </div>
+
+        <!-- RECENT BIDS FEED -->
+        <div class="card" style="padding:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px"><span class="live-dot"></span> Live Bids Feed</div>
+            <button onclick="loadActivity()" class="btn btn-slate">↻ Refresh</button>
           </div>
-          <div class="text-[10px] text-slate-400">Full Platform Authority & Live Supervisor</div>
-        </div>
-      </div>
-
-      <div class="flex items-center space-x-3">
-        <a href="/" target="_blank" class="hidden sm:inline-flex items-center gap-1 text-xs text-slate-300 hover:text-white px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 transition">
-          <span>📱 Open Mobile App</span>
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-        </a>
-        <button id="btnAdminLogout" class="px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold transition flex items-center gap-1 active:scale-95">
-          <span>🚪</span>
-          <span>Logout</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- Main Admin Content Area -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-5">
-
-      <!-- PENDING APPROVALS ALERT BANNER -->
-      <div id="bannerPendingAlert" class="hidden p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between flex-wrap gap-2">
-        <div class="flex items-center space-x-3">
-          <span class="text-2xl">⏳</span>
-          <div>
-            <div class="text-sm font-bold text-amber-300 flex items-center gap-2">
-              <span>Pending Action Items Awaiting Your Approval:</span>
-              <span id="badgePendingCount" class="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-xs font-mono-numbers">0</span>
-            </div>
-            <p class="text-xs text-slate-400 mt-0.5">Showroom/Buyer registrations & wallet deposit requests need review.</p>
-          </div>
-        </div>
-        <button id="btnJumpToPending" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition active:scale-95">
-          Review & Approve Now →
-        </button>
-      </div>
-
-      <!-- KPI METRICS GRID -->
-      <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <!-- Revenue Card -->
-        <div class="glass-panel p-3.5 rounded-2xl border border-slate-800">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Fee Revenue</div>
-          <div id="statRevenue" class="text-xl font-black font-mono-numbers text-emerald-400 mt-1">₹0.00</div>
-          <div class="text-[10px] text-slate-500 mt-0.5">₹500 / handover</div>
-        </div>
-
-        <!-- GMV Card -->
-        <div class="glass-panel p-3.5 rounded-2xl border border-slate-800">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Handover GMV</div>
-          <div id="statGmv" class="text-xl font-black font-mono-numbers text-white mt-1">₹0.00</div>
-          <div class="text-[10px] text-slate-500 mt-0.5">Settled deals</div>
-        </div>
-
-        <!-- Live Auctions Card -->
-        <div class="glass-panel p-3.5 rounded-2xl border border-slate-800">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Live Flash Auctions</div>
-          <div id="statLive" class="text-xl font-black font-mono-numbers text-blue-400 mt-1">0</div>
-          <div class="text-[10px] text-slate-500 mt-0.5">Active ticking clocks</div>
-        </div>
-
-        <!-- Pending Approvals Card -->
-        <div class="glass-panel p-3.5 rounded-2xl border border-slate-800">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pending Approvals</div>
-          <div id="statPending" class="text-xl font-black font-mono-numbers text-amber-400 mt-1">0</div>
-          <div class="text-[10px] text-slate-500 mt-0.5">Registrations & Deposits</div>
-        </div>
-
-        <!-- Liquidity Card -->
-        <div class="glass-panel p-3.5 rounded-2xl border border-slate-800 col-span-2 lg:col-span-1">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">System Liquidity</div>
-          <div id="statLiquidity" class="text-xl font-black font-mono-numbers text-purple-400 mt-1">₹0.00</div>
-          <div class="text-[10px] text-slate-500 mt-0.5">In buyer wallets</div>
-        </div>
-      </div>
-
-      <!-- ADMIN SUB-TABS NAVIGATION -->
-      <div class="flex items-center space-x-2 border-b border-slate-800 pb-2 text-xs overflow-x-auto">
-        <button id="tabBtnPending" class="px-3.5 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold whitespace-nowrap flex items-center gap-1.5 shadow">
-          <span>⏳ Registrations</span>
-          <span id="tabPendingBadge" class="px-1.5 py-0.2 rounded-full bg-slate-950 text-amber-400 font-mono-numbers text-[10px]">0</span>
-        </button>
-        <button id="tabBtnDeposits" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white font-bold whitespace-nowrap flex items-center gap-1.5">
-          <span>💳 Wallet Deposits</span>
-          <span id="tabDepositsBadge" class="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 font-mono-numbers text-[10px]">0</span>
-        </button>
-        <button id="tabBtnRadar" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white font-bold whitespace-nowrap flex items-center gap-1.5">
-          <span>⚡ Live Bidding Radar</span>
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-        </button>
-        <button id="tabBtnAuctions" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white font-bold whitespace-nowrap">
-          🎯 Flash Auctions Supervisor
-        </button>
-        <button id="tabBtnBuyers" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white font-bold whitespace-nowrap">
-          👥 Approved Buyers & Wallets
-        </button>
-        <button id="tabBtnShowrooms" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white font-bold whitespace-nowrap">
-          🏢 Approved Showrooms
-        </button>
-        <button id="tabBtnLedger" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white font-bold whitespace-nowrap">
-          💰 Fee Ledger
-        </button>
-        <button id="tabBtnConfig" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white font-bold whitespace-nowrap">
-          ⚙️ Platform Tuning
-        </button>
-      </div>
-
-      <!-- ============================================================== -->
-      <!-- TAB 1: PENDING REGISTRATIONS (SHOWROOM & BUYER) -->
-      <!-- ============================================================== -->
-      <section id="sectionPending" class="space-y-4">
-        <div class="flex items-center justify-between text-xs">
-          <div>
-            <h2 class="font-bold text-white text-sm">New Registrations Pending Admin Approval</h2>
-            <p class="text-slate-400 text-[11px]">Showrooms and Buyers cannot login or enter the platform until you approve them.</p>
-          </div>
-          <button id="btnRefreshPending" class="text-emerald-400 hover:underline font-bold">↻ Refresh</button>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <!-- Pending Showrooms Card -->
-          <div class="glass-panel p-4 rounded-2xl border border-slate-800 space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-              <span class="font-bold text-white text-xs flex items-center gap-1.5">
-                <span>🏢 Pending Showroom Branches</span>
-                <span id="pendingShowroomCount" class="px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-400 text-[10px] font-mono-numbers">0</span>
-              </span>
-            </div>
-            <div id="pendingShowroomsList" class="space-y-2 max-h-80 overflow-y-auto">
-              <!-- Populated via JS -->
-            </div>
-          </div>
-
-          <!-- Pending Buyers Card -->
-          <div class="glass-panel p-4 rounded-2xl border border-slate-800 space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-              <span class="font-bold text-white text-xs flex items-center gap-1.5">
-                <span>🏍️ Pending Used-Bike Buyers</span>
-                <span id="pendingBuyerCount" class="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono-numbers">0</span>
-              </span>
-            </div>
-            <div id="pendingBuyersList" class="space-y-2 max-h-80 overflow-y-auto">
-              <!-- Populated via JS -->
-            </div>
+          <div id="activityFeed" style="max-height:320px;overflow-y:auto">
+            <div style="text-align:center;color:#475569;padding:32px;font-size:12px">Loading bids...</div>
           </div>
         </div>
       </section>
 
-      <!-- ============================================================== -->
-      <!-- TAB 2: PENDING WALLET DEPOSITS -->
-      <!-- ============================================================== -->
-      <section id="sectionDeposits" class="space-y-4 hidden">
-        <div class="flex items-center justify-between text-xs flex-wrap gap-2">
-          <div>
-            <h2 class="font-bold text-white text-sm flex items-center gap-2">
-              <span>💳 Buyer Wallet Pre-Funding Deposit Requests</span>
-              <span id="pendingDepositsCountBadge" class="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-black text-xs font-mono-numbers">0</span>
-            </h2>
-            <p class="text-slate-400 text-[11px]">Verify payment UTR / bank credit, then click Approve to credit the buyer's balance instantly.</p>
-          </div>
-          <button id="btnRefreshDeposits" class="text-emerald-400 hover:underline font-bold">↻ Refresh Deposits</button>
+      <!-- ═══════════════════════════════════════════════════ -->
+      <!-- SECTION: APPROVALS -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <section id="sec-approvals" class="section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          <h2 style="font-size:16px;font-weight:900;color:#fff">⏳ Pending Approvals</h2>
+          <button onclick="loadApprovals()" class="btn btn-slate">↻ Refresh</button>
         </div>
 
-        <div class="glass-panel p-4 rounded-2xl border border-slate-800 space-y-3">
-          <div id="pendingDepositsList" class="space-y-3 max-h-[500px] overflow-y-auto">
-            <!-- Populated via JS -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px" class="lg:grid-cols-2">
+          <!-- Pending Showrooms -->
+          <div class="card" style="padding:16px">
+            <div style="font-size:12px;font-weight:700;color:#7dd3fc;margin-bottom:10px">🏢 Pending Showrooms <span id="cntPendingShowrooms" style="color:#64748b">(0)</span></div>
+            <div id="listPendingShowrooms"><div style="text-align:center;color:#475569;padding:24px;font-size:12px">No pending showrooms</div></div>
+          </div>
+          <!-- Pending Buyers -->
+          <div class="card" style="padding:16px">
+            <div style="font-size:12px;font-weight:700;color:#34d399;margin-bottom:10px">👥 Pending Buyers <span id="cntPendingBuyers" style="color:#64748b">(0)</span></div>
+            <div id="listPendingBuyers"><div style="text-align:center;color:#475569;padding:24px;font-size:12px">No pending buyers</div></div>
           </div>
         </div>
-      </section>
 
-      <!-- ============================================================== -->
-      <!-- TAB 3: LIVE BIDDING RADAR -->
-      <!-- ============================================================== -->
-      <section id="sectionRadar" class="space-y-4 hidden">
-        <div class="flex items-center justify-between text-xs flex-wrap gap-2">
-          <div>
-            <h2 class="font-bold text-white text-sm flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-              <span>Platform Live Bidding Radar</span>
-            </h2>
-            <p class="text-slate-400 text-[11px]">Real-time incoming dealer bids streaming live across all active auctions.</p>
-          </div>
-          <button id="btnRefreshRadar" class="text-emerald-400 hover:underline font-bold">↻ Refresh Radar</button>
-        </div>
-
-        <div class="glass-panel p-4 rounded-2xl border border-slate-800 space-y-3">
-          <div id="radarBidsList" class="space-y-2 max-h-[500px] overflow-y-auto">
-            <!-- Populated via JS -->
-          </div>
+        <!-- Pending Deposits -->
+        <div class="card" style="padding:16px">
+          <div style="font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:10px">💳 Pending Wallet Deposits <span id="cntPendingDeposits" style="color:#64748b">(0)</span></div>
+          <div style="font-size:11px;color:#64748b;margin-bottom:10px">Verify UTR/UPI reference, then approve to instantly credit buyer wallet.</div>
+          <div id="listPendingDeposits"><div style="text-align:center;color:#475569;padding:24px;font-size:12px">No pending deposits</div></div>
         </div>
       </section>
 
-      <!-- ============================================================== -->
-      <!-- TAB 4: FLASH AUCTIONS SUPERVISOR -->
-      <!-- ============================================================== -->
-      <section id="sectionAuctions" class="space-y-4 hidden">
-        <div class="flex items-center justify-between text-xs flex-wrap gap-2">
-          <div>
-            <h2 class="font-bold text-white text-sm">Flash Auctions Supervisor</h2>
-            <p class="text-slate-400 text-[11px]">Monitor live ticking clocks, force-close, extend time (+5m), or cancel in dispute.</p>
-          </div>
-          <div class="flex items-center space-x-2">
-            <select id="selectAuctionStatusFilter" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white text-xs outline-none">
+      <!-- ═══════════════════════════════════════════════════ -->
+      <!-- SECTION: AUCTIONS -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <section id="sec-auctions" class="section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          <h2 style="font-size:16px;font-weight:900;color:#fff">⚡ Auctions Supervisor</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="auctionFilter" onchange="renderAuctions()" class="inp" style="width:auto;min-width:140px">
               <option value="ALL">All Statuses</option>
-              <option value="LIVE">LIVE Auctions Only</option>
+              <option value="LIVE" selected>🟢 LIVE Only</option>
               <option value="CLOSED">CLOSED</option>
-              <option value="COMPLETED">COMPLETED Handover</option>
+              <option value="COMPLETED">COMPLETED</option>
               <option value="CANCELLED">CANCELLED</option>
             </select>
-            <button id="btnRefreshAuctions" class="text-emerald-400 hover:underline font-bold">↻ Refresh</button>
+            <button onclick="loadAuctions()" class="btn btn-slate">↻ Refresh</button>
           </div>
         </div>
+        <div id="auctionsList"><div style="text-align:center;color:#475569;padding:48px;font-size:12px">Loading auctions...</div></div>
+      </section>
 
-        <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
-          <div id="auctionsList" class="max-h-[600px] overflow-y-auto divide-y divide-slate-800/80 p-2 space-y-2">
-            <!-- Populated via JS -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <!-- SECTION: DEPOSITS -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <section id="sec-deposits" class="section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          <h2 style="font-size:16px;font-weight:900;color:#fff">💳 Deposit History</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input class="search-inp" placeholder="Search by name or UTR..." oninput="filterDeposits(this.value)" id="depositSearch">
+            <select id="depositStatusFilter" onchange="filterDeposits(document.getElementById('depositSearch').value)" class="inp" style="width:auto;min-width:120px">
+              <option value="ALL">All Status</option>
+              <option value="PENDING">PENDING</option>
+              <option value="APPROVED">APPROVED</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
+            <button onclick="loadDepositHistory()" class="btn btn-slate">↻ Refresh</button>
           </div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div id="depositsList" style="max-height:600px;overflow-y:auto"><div style="text-align:center;color:#475569;padding:48px;font-size:12px">Loading deposits...</div></div>
         </div>
       </section>
 
-      <!-- ============================================================== -->
-      <!-- TAB 5: APPROVED BUYERS MANAGEMENT -->
-      <!-- ============================================================== -->
-      <section id="sectionBuyers" class="space-y-4 hidden">
-        <div class="flex items-center justify-between text-xs">
-          <div>
-            <h2 class="font-bold text-white text-sm">Approved Used-Bike Buyers & Wallet Controls</h2>
-            <p class="text-slate-400 text-[11px]">Enforce ₹3,000 pre-funded threshold, credit/debit funds, block/unblock.</p>
+      <!-- ═══════════════════════════════════════════════════ -->
+      <!-- SECTION: BUYERS -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <section id="sec-buyers" class="section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          <h2 style="font-size:16px;font-weight:900;color:#fff">👥 Buyers Management</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input class="search-inp" placeholder="Search name / phone..." oninput="filterBuyers(this.value)" id="buyerSearch">
+            <button onclick="openCreateBuyerModal()" class="btn btn-green">➕ New Buyer</button>
+            <button onclick="loadBuyers()" class="btn btn-slate">↻ Refresh</button>
           </div>
-          <button id="btnRefreshBuyers" class="text-emerald-400 hover:underline font-bold">↻ Refresh</button>
         </div>
-
-        <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
-          <div id="buyersList" class="max-h-96 overflow-y-auto divide-y divide-slate-800/80">
-            <!-- Populated via JS -->
-          </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div id="buyersList" style="max-height:600px;overflow-y:auto"><div style="text-align:center;color:#475569;padding:48px;font-size:12px">Loading buyers...</div></div>
         </div>
       </section>
 
-      <!-- ============================================================== -->
-      <!-- TAB 6: APPROVED SHOWROOM COUNTERS -->
-      <!-- ============================================================== -->
-      <section id="sectionShowrooms" class="space-y-4 hidden">
-        <div class="flex items-center justify-between text-xs">
-          <div>
-            <h2 class="font-bold text-white text-sm">Approved Showroom Deal Desks</h2>
-            <p class="text-slate-400 text-[11px]">Authorized dealers listing customer exchange two-wheelers.</p>
+      <!-- ═══════════════════════════════════════════════════ -->
+      <!-- SECTION: SHOWROOMS -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <section id="sec-showrooms" class="section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          <h2 style="font-size:16px;font-weight:900;color:#fff">🏢 Showrooms Management</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input class="search-inp" placeholder="Search name / phone..." oninput="filterShowrooms(this.value)" id="showroomSearch">
+            <button onclick="openCreateShowroomModal()" class="btn btn-green">➕ New Showroom</button>
+            <button onclick="loadShowrooms()" class="btn btn-slate">↻ Refresh</button>
           </div>
-          <button id="btnRefreshShowrooms" class="text-emerald-400 hover:underline font-bold">↻ Refresh</button>
         </div>
-
-        <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
-          <div id="showroomsList" class="max-h-96 overflow-y-auto divide-y divide-slate-800/80">
-            <!-- Populated via JS -->
-          </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div id="showroomsList" style="max-height:600px;overflow-y:auto"><div style="text-align:center;color:#475569;padding:48px;font-size:12px">Loading showrooms...</div></div>
         </div>
       </section>
 
-      <!-- ============================================================== -->
-      <!-- TAB 7: FEE DEDUCTION LEDGER -->
-      <!-- ============================================================== -->
-      <section id="sectionLedger" class="space-y-4 hidden">
-        <div class="flex items-center justify-between text-xs">
-          <div>
-            <h2 class="font-bold text-white text-sm flex items-center gap-2">
-              <span>Platform Transactions & Fee Deductions</span>
-              <span id="ledgerCountBadge" class="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-black text-xs font-mono-numbers">0</span>
-            </h2>
-            <p class="text-slate-400 text-[11px]">Immutable record of all ₹500 fee debits at vehicle handover verification.</p>
-          </div>
+      <!-- ═══════════════════════════════════════════════════ -->
+      <!-- SECTION: LEDGER -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <section id="sec-ledger" class="section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          <h2 style="font-size:16px;font-weight:900;color:#fff">💰 Platform Fee Ledger</h2>
+          <button onclick="loadLedger()" class="btn btn-slate">↻ Refresh</button>
         </div>
-
-        <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
-          <div id="ledgerList" class="max-h-96 overflow-y-auto divide-y divide-slate-800/80">
-            <!-- Populated via JS -->
-          </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div id="ledgerList" style="max-height:600px;overflow-y:auto"><div style="text-align:center;color:#475569;padding:48px;font-size:12px">Loading transactions...</div></div>
         </div>
       </section>
 
-      <!-- ============================================================== -->
-      <!-- TAB 8: PLATFORM TUNING & BUSINESS RULES -->
-      <!-- ============================================================== -->
-      <section id="sectionConfig" class="space-y-4 hidden">
-        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4 max-w-xl">
-          <div class="border-b border-slate-800 pb-2">
-            <h2 class="font-bold text-white text-sm">Platform Business Rules & Engine Tuning</h2>
-            <p class="text-slate-400 text-[11px]">Live configuration parameters applied across all buyer and showroom nodes.</p>
-          </div>
-
-          <form id="formConfig" class="space-y-3 text-xs">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block text-slate-300 font-bold mb-1">Min Buyer Wallet to Bid (₹)</label>
-                <input type="number" id="inputMinWallet" step="500" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono-numbers">
-              </div>
-              <div>
-                <label class="block text-slate-300 font-bold mb-1">Handover Platform Fee (₹)</label>
-                <input type="number" id="inputHandoverFee" step="50" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono-numbers">
-              </div>
-              <div>
-                <label class="block text-slate-300 font-bold mb-1">Minimum Bid Increment (₹)</label>
-                <input type="number" id="inputMinIncrement" step="100" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono-numbers">
-              </div>
-              <div>
-                <label class="block text-slate-300 font-bold mb-1">Flash Auction Duration (Minutes)</label>
-                <input type="number" id="inputAuctionDuration" min="1" max="60" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono-numbers">
-              </div>
+      <!-- ═══════════════════════════════════════════════════ -->
+      <!-- SECTION: SETTINGS -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <section id="sec-settings" class="section">
+        <h2 style="font-size:16px;font-weight:900;color:#fff;margin-bottom:16px">⚙️ Platform Settings</h2>
+        <div class="card" style="padding:20px;max-width:500px">
+          <div style="font-size:11px;color:#64748b;margin-bottom:16px">Changes apply live across all buyer and showroom nodes immediately.</div>
+          <form onsubmit="saveSettings(event)" style="display:grid;gap:14px">
+            <div>
+              <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Minimum Wallet Balance to Bid (₹)</label>
+              <input type="number" id="cfgMinWallet" class="inp" step="500" min="0">
             </div>
-
-            <button type="submit" class="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md active:scale-95 transition">
-              Save Platform Rules Dynamically
-            </button>
+            <div>
+              <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Handover Platform Fee (₹)</label>
+              <input type="number" id="cfgHandoverFee" class="inp" step="50" min="0">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Minimum Bid Increment (₹)</label>
+              <input type="number" id="cfgMinIncrement" class="inp" step="100" min="100">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Default Auction Duration (Minutes)</label>
+              <input type="number" id="cfgAuctionDuration" class="inp" min="1" max="120">
+            </div>
+            <button type="submit" class="btn btn-purple" style="padding:10px 20px;font-size:12px;border-radius:10px">💾 Save Platform Settings</button>
           </form>
         </div>
       </section>
 
     </main>
   </div>
+</div>
 
-  <!-- ==================================================================== -->
-  <!-- MODAL: ADMIN WALLET ADJUSTMENT -->
-  <!-- ==================================================================== -->
-  <div id="modalAdminAdjustWallet" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="glass-panel w-full max-w-sm p-5 rounded-2xl border border-purple-500/30 shadow-2xl space-y-3 relative">
-      <button id="btnCloseAdminWalletModal" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">&times;</button>
-      <h3 class="text-sm font-bold text-white">Adjust Buyer Wallet Balance</h3>
-      <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-xs">
-        <div class="text-slate-400">Buyer: <span id="adminAdjustBuyerName" class="font-bold text-white"></span></div>
-        <div class="text-slate-400">Current Balance: <span id="adminAdjustCurrentBalance" class="font-bold text-emerald-400 font-mono-numbers"></span></div>
-      </div>
-      <form id="formAdminAdjustWallet" class="space-y-3 text-xs">
-        <input type="hidden" id="adminAdjustBuyerId">
-        <div>
-          <label class="block text-slate-300 font-bold mb-1">Action</label>
-          <select id="selectAdminWalletAction" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none">
-            <option value="credit">➕ Credit / Add Funds to Wallet</option>
-            <option value="debit">➖ Debit / Deduct Funds from Wallet</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-slate-300 font-bold mb-1">Amount (₹)</label>
-          <input type="number" id="inputAdminWalletAmount" required min="100" step="100" value="5000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none font-mono-numbers">
-        </div>
-        <button type="submit" class="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs shadow-md">
-          Execute Wallet Adjustment
-        </button>
-      </form>
+<!-- ═══════════════════════════════════════════ -->
+<!-- MODALS -->
+<!-- ═══════════════════════════════════════════ -->
+
+<!-- Wallet Adjust Modal -->
+<div id="modalWallet" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button onclick="closeModal('modalWallet')" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:20px;cursor:pointer">×</button>
+    <h3 style="font-size:14px;font-weight:900;color:#fff;margin-bottom:12px">💰 Adjust Buyer Wallet</h3>
+    <div style="background:#0a111f;border:1px solid #1e2d4a;border-radius:8px;padding:10px;margin-bottom:12px;font-size:11px">
+      <div style="color:#64748b">Buyer: <span id="wlBuyerName" style="color:#fff;font-weight:700"></span></div>
+      <div style="color:#64748b;margin-top:4px">Current Balance: <span id="wlCurrentBal" style="color:#34d399;font-weight:900;font-variant-numeric:tabular-nums"></span></div>
     </div>
+    <form onsubmit="submitWalletAdjust(event)" style="display:grid;gap:10px">
+      <input type="hidden" id="wlBuyerId">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Action</label>
+        <select id="wlAction" class="inp">
+          <option value="credit">➕ Credit / Add Funds</option>
+          <option value="debit">➖ Debit / Deduct Funds</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Amount (₹)</label>
+        <input type="number" id="wlAmount" class="inp" min="100" step="500" value="5000" required>
+      </div>
+      <button type="submit" class="btn btn-purple" style="padding:10px;font-size:12px;border-radius:10px;width:100%">Execute Wallet Adjustment</button>
+    </form>
   </div>
+</div>
 
-  <!-- ==================================================================== -->
-  <!-- MODAL: BID AUDIT TRAIL -->
-  <!-- ==================================================================== -->
-  <div id="modalBids" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="glass-panel w-full max-w-md p-5 rounded-2xl border border-slate-700 shadow-2xl space-y-3 relative">
-      <button id="btnCloseBidsModal" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">&times;</button>
-      <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
-        <span class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 text-sm">📋</span>
+<!-- Bid Audit Modal -->
+<div id="modalBids" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="max-width:480px">
+    <button onclick="closeModal('modalBids')" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:20px;cursor:pointer">×</button>
+    <h3 style="font-size:14px;font-weight:900;color:#fff;margin-bottom:4px">📋 Bid Audit Trail</h3>
+    <div id="modalBidsTitle" style="font-size:11px;color:#64748b;margin-bottom:12px"></div>
+    <div id="modalBidsList" style="max-height:340px;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- PIN Reset Modal -->
+<div id="modalPin" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="max-width:360px">
+    <button onclick="closeModal('modalPin')" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:20px;cursor:pointer">×</button>
+    <h3 style="font-size:14px;font-weight:900;color:#fff;margin-bottom:12px">🔑 Reset PIN</h3>
+    <div style="font-size:11px;color:#64748b;margin-bottom:12px">For: <span id="pinTargetName" style="color:#fff;font-weight:700"></span></div>
+    <form onsubmit="submitPinReset(event)" style="display:grid;gap:10px">
+      <input type="hidden" id="pinTargetId">
+      <input type="hidden" id="pinTargetType">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">New PIN (min 4 digits)</label>
+        <input type="text" id="pinNewValue" class="inp" placeholder="e.g. 1234" maxlength="8" required>
+      </div>
+      <button type="submit" class="btn btn-purple" style="padding:10px;font-size:12px;border-radius:10px;width:100%">🔑 Save New PIN</button>
+    </form>
+  </div>
+</div>
+
+<!-- Create Buyer Modal -->
+<div id="modalCreateBuyer" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button onclick="closeModal('modalCreateBuyer')" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:20px;cursor:pointer">×</button>
+    <h3 style="font-size:14px;font-weight:900;color:#fff;margin-bottom:12px">➕ Create New Buyer</h3>
+    <form onsubmit="submitCreateBuyer(event)" style="display:grid;gap:10px">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Business Name *</label>
+        <input type="text" id="cbName" class="inp" placeholder="e.g. Sharma Motors" required>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Phone Number *</label>
+        <input type="text" id="cbPhone" class="inp" placeholder="e.g. 9876543210" required>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">PIN (default: 1234)</label>
+        <input type="text" id="cbPin" class="inp" placeholder="1234" value="1234" maxlength="8">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Initial Wallet Balance (₹)</label>
+        <input type="number" id="cbBalance" class="inp" value="0" min="0" step="500">
+      </div>
+      <button type="submit" class="btn btn-green" style="padding:10px;font-size:12px;border-radius:10px;width:100%">✅ Create & Approve Buyer</button>
+    </form>
+  </div>
+</div>
+
+<!-- Create Showroom Modal -->
+<div id="modalCreateShowroom" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button onclick="closeModal('modalCreateShowroom')" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:20px;cursor:pointer">×</button>
+    <h3 style="font-size:14px;font-weight:900;color:#fff;margin-bottom:12px">➕ Create New Showroom</h3>
+    <form onsubmit="submitCreateShowroom(event)" style="display:grid;gap:10px">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Showroom Name *</label>
+        <input type="text" id="csName" class="inp" placeholder="e.g. Gulzar Auto Palace" required>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Phone Number *</label>
+        <input type="text" id="csPhone" class="inp" placeholder="e.g. 9876543210" required>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Address *</label>
+        <input type="text" id="csAddress" class="inp" placeholder="e.g. Sector 12, Gurugram" required>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Default PIN (min 4 digits)</label>
+        <input type="text" id="csPin" class="inp" placeholder="1234" value="1234" maxlength="8">
+      </div>
+      <button type="submit" class="btn btn-green" style="padding:10px;font-size:12px;border-radius:10px;width:100%">✅ Create & Activate Showroom</button>
+    </form>
+  </div>
+</div>
+
+<!-- Reject Deposit Modal -->
+<div id="modalRejectDeposit" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="max-width:380px">
+    <button onclick="closeModal('modalRejectDeposit')" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:20px;cursor:pointer">×</button>
+    <h3 style="font-size:14px;font-weight:900;color:#fca5a5;margin-bottom:12px">❌ Reject Deposit Request</h3>
+    <form onsubmit="submitRejectDeposit(event)" style="display:grid;gap:10px">
+      <input type="hidden" id="rejectDepositId">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Rejection Reason</label>
+        <input type="text" id="rejectDepositNote" class="inp" value="Payment verification failed" required>
+      </div>
+      <button type="submit" class="btn btn-red" style="padding:10px;font-size:12px;border-radius:10px;width:100%">❌ Confirm Reject</button>
+    </form>
+  </div>
+</div>
+
+<!-- Extend Auction Modal -->
+<div id="modalExtend" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="max-width:360px">
+    <button onclick="closeModal('modalExtend')" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:20px;cursor:pointer">×</button>
+    <h3 style="font-size:14px;font-weight:900;color:#fff;margin-bottom:12px">⏱️ Extend Auction</h3>
+    <div id="extendAuctionName" style="font-size:11px;color:#94a3b8;margin-bottom:16px"></div>
+    <div style="display:grid;gap:8px">
+      <button onclick="submitExtend(5)" class="btn btn-amber" style="padding:12px;font-size:13px;border-radius:10px">+5 Minutes</button>
+      <button onclick="submitExtend(10)" class="btn btn-amber" style="padding:12px;font-size:13px;border-radius:10px">+10 Minutes</button>
+      <button onclick="submitExtend(15)" class="btn btn-amber" style="padding:12px;font-size:13px;border-radius:10px">+15 Minutes</button>
+    </div>
+    <input type="hidden" id="extendAuctionId">
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let allBuyers = [], allShowrooms = [], allDeposits = [], allAuctions = [], allLedger = [];
+let autoRefreshInterval = null;
+let timerInterval = null;
+
+// ═══════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════
+async function doLogin(e) {
+  e.preventDefault();
+  const pwd = document.getElementById('loginPwd').value.trim();
+  try {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'admin', password: pwd })
+    });
+    const d = await r.json();
+    if (d.success) {
+      localStorage.setItem('ed_admin', JSON.stringify(d.user));
+      document.getElementById('authGate').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      initApp();
+    } else {
+      toast(d.error || 'Invalid password', 'error');
+    }
+  } catch(err) { toast('Connection error: ' + err.message, 'error'); }
+}
+
+function doLogout() {
+  localStorage.removeItem('ed_admin');
+  clearInterval(autoRefreshInterval);
+  clearInterval(timerInterval);
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('authGate').style.display = 'flex';
+}
+
+function checkAuth() {
+  const s = localStorage.getItem('ed_admin');
+  if (s) {
+    document.getElementById('authGate').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+async function initApp() {
+  await loadStats();
+  await loadActivity();
+  startAutoRefresh();
+  startTimerLoop();
+}
+
+function startAutoRefresh() {
+  clearInterval(autoRefreshInterval);
+  autoRefreshInterval = setInterval(async () => {
+    await loadStats();
+    const tab = document.querySelector('.section.active-section')?.id?.replace('sec-','');
+    if (tab === 'dashboard') await loadActivity();
+    if (tab === 'approvals') await loadApprovals();
+    if (tab === 'auctions') await loadAuctions();
+  }, 5000);
+}
+
+function startTimerLoop() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => updateCountdowns(), 1000);
+}
+
+// ═══════════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  const sec = document.getElementById('sec-' + tab);
+  if (sec) sec.classList.add('active-section');
+  const links = document.querySelectorAll('#sidebarNav .sidebar-link');
+  const tabOrder = ['dashboard','approvals','auctions','deposits','buyers','showrooms','ledger','settings'];
+  const idx = tabOrder.indexOf(tab);
+  if (links[idx]) links[idx].classList.add('active');
+
+  if (tab === 'approvals') loadApprovals();
+  else if (tab === 'auctions') loadAuctions();
+  else if (tab === 'deposits') loadDepositHistory();
+  else if (tab === 'buyers') loadBuyers();
+  else if (tab === 'showrooms') loadShowrooms();
+  else if (tab === 'ledger') loadLedger();
+  else if (tab === 'settings') loadSettings();
+}
+
+// ═══════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════
+function inr(n) { return '₹' + parseFloat(n||0).toLocaleString('en-IN'); }
+function fmt(dt) {
+  if (!dt) return '—';
+  const d = new Date(dt);
+  return d.toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'2-digit'}) + ' ' +
+         d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:false});
+}
+function badgeHtml(status) {
+  const m = { LIVE:'badge-live', CLOSED:'badge-closed', COMPLETED:'badge-completed', CANCELLED:'badge-cancelled',
+    PENDING:'badge-pending', APPROVED:'badge-approved', REJECTED:'badge-rejected' };
+  return `<span class="${m[status]||'badge-closed'}" style="padding:2px 8px;border-radius:99px;font-size:9px;font-weight:900;text-transform:uppercase">${status}</span>`;
+}
+function activeBadge(active) {
+  return active
+    ? `<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#064e3b;color:#34d399;border:1px solid #065f46">ACTIVE</span>`
+    : `<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#450a0a;color:#fca5a5;border:1px solid #7f1d1d">BLOCKED</span>`;
+}
+
+async function apiFetch(url, opts={}) {
+  const r = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts });
+  return r.json();
+}
+
+function toast(msg, type='info') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.animation='slideOut .3s ease forwards'; setTimeout(()=>t.remove(), 300); }, 4000);
+}
+
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+
+async function confirmAction(msg) {
+  return window.confirm(msg);
+}
+
+// ═══════════════════════════════════════════════════════
+// STATS / DASHBOARD
+// ═══════════════════════════════════════════════════════
+async function loadStats() {
+  try {
+    const d = await apiFetch('/api/admin/stats');
+    if (!d.success) return;
+    const s = d.stats;
+    document.getElementById('kRevenue').textContent = inr(s.totalRevenue);
+    document.getElementById('kGmv').textContent = inr(s.totalGmv);
+    document.getElementById('kLive').textContent = s.liveAuctions;
+    document.getElementById('kTotalAuctions').textContent = s.totalAuctions + ' total';
+    document.getElementById('kBuyers').textContent = s.totalBuyers;
+    document.getElementById('kVerifiedBuyers').textContent = s.verifiedBuyers + ' verified';
+    document.getElementById('kShowrooms').textContent = s.totalShowrooms;
+    document.getElementById('kLiquidity').textContent = inr(s.totalLiquidity);
+    document.getElementById('kBids').textContent = s.totalBids.toLocaleString();
+    document.getElementById('kPending').textContent = s.pendingApprovals;
+
+    const sidebarApprBadge = document.getElementById('sidebarApprovalBadge');
+    if (s.pendingApprovals > 0) {
+      sidebarApprBadge.textContent = s.pendingApprovals;
+      sidebarApprBadge.style.display = 'inline-block';
+      document.getElementById('pendingBanner').style.display = 'flex';
+      document.getElementById('pendingBannerText').textContent =
+        `${s.pendingBuyers} buyers, ${s.pendingShowrooms} showrooms, ${s.pendingDeposits} deposits awaiting review.`;
+    } else {
+      sidebarApprBadge.style.display = 'none';
+      document.getElementById('pendingBanner').style.display = 'none';
+    }
+    const liveBadge = document.getElementById('sidebarLiveBadge');
+    if (s.liveAuctions > 0) { liveBadge.textContent = s.liveAuctions; liveBadge.style.display = 'inline-block'; }
+    else liveBadge.style.display = 'none';
+
+    if (s.activeConfig) {
+      document.getElementById('cfgMinWallet').value = s.activeConfig.minWalletBalanceToBid;
+      document.getElementById('cfgHandoverFee').value = s.activeConfig.handoverPlatformFee;
+      document.getElementById('cfgMinIncrement').value = s.activeConfig.minBidIncrement;
+      document.getElementById('cfgAuctionDuration').value = s.activeConfig.defaultAuctionDurationMinutes;
+    }
+  } catch(e) {}
+}
+
+async function loadActivity() {
+  try {
+    const d = await apiFetch('/api/admin/live-bids-feed');
+    const el = document.getElementById('activityFeed');
+    if (!d.success || !d.bids.length) { el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">No recent bids</div>'; return; }
+    el.innerHTML = d.bids.map(b => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a2640;font-size:11px">
         <div>
-          <h3 class="text-sm font-bold text-white">Live Bidding Audit Trail</h3>
-          <p id="auditVehicleTitle" class="text-[11px] text-slate-400"></p>
+          <span style="color:#a78bfa;font-weight:700">${b.bidder_name}</span>
+          <span style="color:#64748b"> bid </span>
+          <span style="color:#34d399;font-weight:900">${inr(b.amount)}</span>
+          <span style="color:#64748b"> on </span>
+          <span style="color:#e2e8f0;font-weight:600">${b.vehicle_model}</span>
+        </div>
+        <div style="color:#475569;white-space:nowrap;margin-left:8px">${fmt(b.placed_at)}</div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════
+// APPROVALS
+// ═══════════════════════════════════════════════════════
+async function loadApprovals() {
+  try {
+    const d = await apiFetch('/api/admin/pending');
+    if (!d.success) return;
+
+    // Pending Showrooms
+    document.getElementById('cntPendingShowrooms').textContent = `(${d.pendingShowrooms.length})`;
+    document.getElementById('listPendingShowrooms').innerHTML = d.pendingShowrooms.length ? d.pendingShowrooms.map(s => `
+      <div style="background:#0a111f;border:1px solid #1a2640;border-radius:8px;padding:10px;margin-bottom:8px;font-size:11px">
+        <div style="font-weight:700;color:#e2e8f0">${s.name}</div>
+        <div style="color:#64748b;margin-top:2px">📞 ${s.phone} | 📅 ${fmt(s.created_at)}</div>
+        <div style="color:#64748b;margin-top:2px">📍 ${s.address||'—'}</div>
+        <div class="action-group" style="margin-top:8px">
+          <button onclick="approveEntity('showroom',${s.id},'${s.name.replace(/'/g,"\\'")}',this)" class="btn btn-green">✅ Approve</button>
+          <button onclick="rejectEntity('showroom',${s.id},'${s.name.replace(/'/g,"\\'")}',this)" class="btn btn-red">❌ Reject</button>
+        </div>
+      </div>`).join('') : '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">✅ No pending showrooms</div>';
+
+    // Pending Buyers
+    document.getElementById('cntPendingBuyers').textContent = `(${d.pendingBuyers.length})`;
+    document.getElementById('listPendingBuyers').innerHTML = d.pendingBuyers.length ? d.pendingBuyers.map(b => `
+      <div style="background:#0a111f;border:1px solid #1a2640;border-radius:8px;padding:10px;margin-bottom:8px;font-size:11px">
+        <div style="font-weight:700;color:#e2e8f0">${b.business_name}</div>
+        <div style="color:#64748b;margin-top:2px">📞 ${b.phone} | 📅 ${fmt(b.created_at)}</div>
+        <div class="action-group" style="margin-top:8px">
+          <button onclick="approveEntity('buyer',${b.id},'${b.business_name.replace(/'/g,"\\'")}',this)" class="btn btn-green">✅ Approve</button>
+          <button onclick="rejectEntity('buyer',${b.id},'${b.business_name.replace(/'/g,"\\'")}',this)" class="btn btn-red">❌ Reject</button>
+        </div>
+      </div>`).join('') : '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">✅ No pending buyers</div>';
+
+    // Pending Deposits
+    document.getElementById('cntPendingDeposits').textContent = `(${d.pendingDeposits.length})`;
+    document.getElementById('listPendingDeposits').innerHTML = d.pendingDeposits.length ? d.pendingDeposits.map(dep => `
+      <div style="background:#0a111f;border:1px solid #1a2640;border-radius:8px;padding:12px;margin-bottom:8px;font-size:11px">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px">
+          <div>
+            <span style="font-weight:700;color:#fbbf24;font-size:14px">${inr(dep.amount)}</span>
+            <span style="color:#64748b;margin-left:6px">${dep.payment_method}</span>
+          </div>
+          <div>${badgeHtml('PENDING')}</div>
+        </div>
+        <div style="color:#e2e8f0;font-weight:600;margin-top:4px">${dep.business_name}</div>
+        <div style="color:#64748b;margin-top:2px">📞 ${dep.phone} | Wallet: ${inr(dep.current_wallet)}</div>
+        <div style="color:#94a3b8;margin-top:4px;font-family:monospace;background:#060c18;padding:4px 8px;border-radius:6px">UTR: ${dep.reference_id||'—'}</div>
+        <div style="color:#475569;margin-top:2px">Requested: ${fmt(dep.created_at)}</div>
+        <div class="action-group" style="margin-top:8px">
+          <button onclick="approveDeposit(${dep.id},'${dep.business_name.replace(/'/g,"\\'")}',${dep.amount},this)" class="btn btn-green">✅ Approve & Credit</button>
+          <button onclick="openRejectDeposit(${dep.id})" class="btn btn-red">❌ Reject</button>
+        </div>
+      </div>`).join('') : '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">✅ No pending deposits</div>';
+  } catch(e) { console.error(e); }
+}
+
+async function approveEntity(type, id, name, btn) {
+  if (!await confirmAction(`Approve ${type} "${name}"?`)) return;
+  btn.disabled = true; btn.textContent = '...';
+  const d = await apiFetch(`/api/admin/approve/${type}/${id}`, { method:'POST' });
+  if (d.success) { toast(d.message, 'success'); loadApprovals(); loadStats(); }
+  else { toast(d.error, 'error'); btn.disabled=false; btn.textContent='✅ Approve'; }
+}
+
+async function rejectEntity(type, id, name, btn) {
+  if (!await confirmAction(`REJECT & DELETE ${type} "${name}"? This cannot be undone.`)) return;
+  btn.disabled = true; btn.textContent = '...';
+  const d = await apiFetch(`/api/admin/reject/${type}/${id}`, { method:'POST' });
+  if (d.success) { toast(d.message, 'success'); loadApprovals(); loadStats(); }
+  else { toast(d.error, 'error'); btn.disabled=false; btn.textContent='❌ Reject'; }
+}
+
+async function approveDeposit(id, name, amount, btn) {
+  if (!await confirmAction(`Approve ${inr(amount)} deposit for "${name}"? Wallet will be credited immediately.`)) return;
+  btn.disabled = true; btn.textContent = '...';
+  const d = await apiFetch(`/api/admin/deposits/${id}/approve`, { method:'POST' });
+  if (d.success) { toast(d.message, 'success'); loadApprovals(); loadStats(); }
+  else { toast(d.error, 'error'); btn.disabled=false; btn.textContent='✅ Approve & Credit'; }
+}
+
+function openRejectDeposit(id) {
+  document.getElementById('rejectDepositId').value = id;
+  openModal('modalRejectDeposit');
+}
+
+async function submitRejectDeposit(e) {
+  e.preventDefault();
+  const id = document.getElementById('rejectDepositId').value;
+  const notes = document.getElementById('rejectDepositNote').value;
+  const d = await apiFetch(`/api/admin/deposits/${id}/reject`, { method:'POST', body: JSON.stringify({ notes }) });
+  if (d.success) { toast(d.message, 'success'); closeModal('modalRejectDeposit'); loadApprovals(); }
+  else toast(d.error, 'error');
+}
+
+// ═══════════════════════════════════════════════════════
+// AUCTIONS
+// ═══════════════════════════════════════════════════════
+async function loadAuctions() {
+  const status = document.getElementById('auctionFilter').value;
+  const d = await apiFetch(`/api/admin/auctions?status=${status}`);
+  allAuctions = d.auctions || [];
+  renderAuctions();
+}
+
+function updateCountdowns() {
+  const now = Date.now();
+  document.querySelectorAll('[data-ends-at]').forEach(el => {
+    const endsAt = parseInt(el.dataset.endsAt);
+    const remaining = Math.max(0, Math.floor((endsAt - now) / 1000));
+    const m = Math.floor(remaining / 60).toString().padStart(2,'0');
+    const s = (remaining % 60).toString().padStart(2,'0');
+    el.textContent = `${m}:${s}`;
+    el.style.color = remaining < 120 ? '#f87171' : (remaining < 300 ? '#fbbf24' : '#34d399');
+  });
+}
+
+function renderAuctions() {
+  const filter = document.getElementById('auctionFilter').value;
+  const list = filter === 'ALL' ? allAuctions : allAuctions.filter(a => a.status === filter);
+  const el = document.getElementById('auctionsList');
+  if (!list.length) { el.innerHTML = '<div style="text-align:center;color:#475569;padding:48px;font-size:12px">No auctions found</div>'; return; }
+  el.innerHTML = list.map(a => {
+    const endsAtMs = a.ends_at ? new Date(a.ends_at).getTime() : 0;
+    return `
+    <div style="background:#0a111f;border:1px solid #1a2640;border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="flex:1;min-width:200px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:900;color:#fff">#${a.id} — ${a.vehicle_model}</span>
+            ${badgeHtml(a.status)}
+          </div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">🏢 ${a.showroom_name} | ${a.make||''} ${a.manufacturing_year||''} | ${(a.km_driven||0).toLocaleString()} KM</div>
+          <div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap">
+            <div style="font-size:11px"><span style="color:#64748b">Base: </span><span style="color:#94a3b8;font-weight:700">${inr(a.base_price)}</span></div>
+            <div style="font-size:11px"><span style="color:#64748b">Current: </span><span style="color:#34d399;font-weight:900">${inr(a.current_highest_bid)}</span></div>
+            <div style="font-size:11px"><span style="color:#64748b">Bids: </span><span style="color:#a78bfa;font-weight:700">${a.total_bids}</span></div>
+          </div>
+          ${a.highest_bidder_name ? `<div style="font-size:11px;color:#64748b;margin-top:2px">🏆 Leader: <span style="color:#fbbf24;font-weight:600">${a.highest_bidder_name}</span></div>` : ''}
+          ${a.status === 'LIVE' ? `<div style="margin-top:6px;display:flex;align-items:center;gap:6px"><span class="live-dot"></span><span style="font-size:11px;color:#64748b">Ends in: </span><span class="countdown" data-ends-at="${endsAtMs}">--:--</span></div>` : `<div style="font-size:11px;color:#64748b;margin-top:4px">📅 ${fmt(a.ends_at)}</div>`}
+        </div>
+        <div class="action-group" style="flex-shrink:0">
+          <button onclick="showBids(${a.id},'${a.vehicle_model.replace(/'/g,"\\'")}',${JSON.stringify(a.recent_bids||[]).replace(/"/g,'&quot;')})" class="btn btn-blue">📋 Bids</button>
+          ${a.status === 'LIVE' ? `
+          <button onclick="openExtendModal(${a.id},'${a.vehicle_model.replace(/'/g,"\\'")}') " class="btn btn-amber">⏱️ Extend</button>
+          <button onclick="forceClose(${a.id},'${a.vehicle_model.replace(/'/g,"\\'")}',this)" class="btn btn-slate">🔒 Close</button>
+          <button onclick="cancelAuction(${a.id},'${a.vehicle_model.replace(/'/g,"\\'")}',this)" class="btn btn-red">❌ Cancel</button>
+          ` : (a.status !== 'COMPLETED' && a.status !== 'CANCELLED' ? `
+          <button onclick="cancelAuction(${a.id},'${a.vehicle_model.replace(/'/g,"\\'")}',this)" class="btn btn-red">❌ Cancel</button>
+          ` : '')}
         </div>
       </div>
-      <div class="max-h-64 overflow-y-auto space-y-2 pr-1" id="auditBidsList"></div>
-    </div>
-  </div>
+    </div>`;
+  }).join('');
+  updateCountdowns();
+}
 
-  <!-- TOAST CONTAINER -->
-  <div id="toastContainer" class="fixed bottom-6 right-4 z-50 flex flex-col space-y-2 pointer-events-none max-w-xs w-full"></div>
+function showBids(id, title, bidsJson) {
+  let bids;
+  try { bids = typeof bidsJson === 'string' ? JSON.parse(bidsJson.replace(/&quot;/g,'"')) : bidsJson; } catch(e) { bids=[]; }
+  document.getElementById('modalBidsTitle').textContent = title;
+  const el = document.getElementById('modalBidsList');
+  if (!bids || !bids.length) { el.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">No bids placed yet</div>'; }
+  else el.innerHTML = bids.map((b,i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a2640;font-size:11px">
+      <div><span style="color:#64748b;margin-right:6px">#${i+1}</span><span style="color:#e2e8f0;font-weight:600">${b.bidder_name}</span><div style="color:#64748b;font-size:10px">${b.bidder_phone||''}</div></div>
+      <div style="text-align:right"><div style="color:#34d399;font-weight:900">${inr(b.amount)}</div><div style="color:#475569;font-size:10px">${fmt(b.placed_at)}</div></div>
+    </div>`).join('');
+  openModal('modalBids');
+}
 
-  <!-- Scripts -->
-  <script type="module" src="/js/admin.js"></script>
+function openExtendModal(id, name) {
+  document.getElementById('extendAuctionId').value = id;
+  document.getElementById('extendAuctionName').textContent = '#' + id + ' — ' + name;
+  openModal('modalExtend');
+}
+
+async function submitExtend(minutes) {
+  const id = document.getElementById('extendAuctionId').value;
+  const d = await apiFetch(`/api/admin/auctions/${id}/extend`, { method:'POST', body: JSON.stringify({ minutes }) });
+  if (d.success) { toast(d.message, 'success'); closeModal('modalExtend'); loadAuctions(); }
+  else toast(d.error, 'error');
+}
+
+async function forceClose(id, name, btn) {
+  if (!await confirmAction(`Force-close auction "${name}"? Highest bidder wins immediately.`)) return;
+  btn.disabled=true; btn.textContent='...';
+  const d = await apiFetch(`/api/admin/auctions/${id}/force-close`, { method:'POST' });
+  if (d.success) { toast(d.message, 'success'); loadAuctions(); loadStats(); }
+  else { toast(d.error,'error'); btn.disabled=false; btn.textContent='🔒 Close'; }
+}
+
+async function cancelAuction(id, name, btn) {
+  const reason = window.prompt(`Cancel auction "${name}"?\nEnter reason (optional):`, 'Cancelled by Admin');
+  if (reason === null) return;
+  btn.disabled=true; btn.textContent='...';
+  const d = await apiFetch(`/api/admin/auctions/${id}/cancel`, { method:'POST', body: JSON.stringify({ reason: reason||'Cancelled by Admin' }) });
+  if (d.success) { toast(d.message, 'success'); loadAuctions(); loadStats(); }
+  else { toast(d.error,'error'); btn.disabled=false; btn.textContent='❌ Cancel'; }
+}
+
+// ═══════════════════════════════════════════════════════
+// DEPOSITS HISTORY
+// ═══════════════════════════════════════════════════════
+async function loadDepositHistory() {
+  const d = await apiFetch('/api/admin/deposit-history');
+  allDeposits = d.deposits || [];
+  filterDeposits('');
+}
+
+function filterDeposits(q) {
+  const statusFilter = document.getElementById('depositStatusFilter').value;
+  const query = q.toLowerCase();
+  let list = allDeposits;
+  if (statusFilter !== 'ALL') list = list.filter(d => d.status === statusFilter);
+  if (query) list = list.filter(d => (d.business_name||'').toLowerCase().includes(query) || (d.reference_id||'').toLowerCase().includes(query));
+  const el = document.getElementById('depositsList');
+  if (!list.length) { el.innerHTML='<div style="text-align:center;color:#475569;padding:48px;font-size:12px">No deposits found</div>'; return; }
+  el.innerHTML = list.map(d => `
+    <div class="tbl-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="flex:1;min-width:180px">
+        <div style="font-size:12px;font-weight:700;color:#e2e8f0">${d.business_name}</div>
+        <div style="font-size:10px;color:#64748b">${d.phone} | ${fmt(d.created_at)}</div>
+        <div style="font-size:10px;color:#94a3b8;font-family:monospace;margin-top:2px">UTR: ${d.reference_id||'—'}</div>
+        ${d.admin_notes ? `<div style="font-size:10px;color:#f87171;margin-top:2px">Note: ${d.admin_notes}</div>` : ''}
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-weight:900;color:#fbbf24;font-size:13px">${inr(d.amount)}</div>
+        <div style="margin-top:4px">${badgeHtml(d.status)}</div>
+        <div style="font-size:10px;color:#475569;margin-top:2px">Wallet: ${inr(d.current_wallet)}</div>
+      </div>
+      ${d.status==='PENDING' ? `<div class="action-group">
+        <button onclick="approveDeposit(${d.id},'${d.business_name.replace(/'/g,"\\'")}',${d.amount},this)" class="btn btn-green">✅ Approve</button>
+        <button onclick="openRejectDeposit(${d.id})" class="btn btn-red">❌ Reject</button>
+      </div>` : ''}
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// BUYERS
+// ═══════════════════════════════════════════════════════
+async function loadBuyers() {
+  const d = await apiFetch('/api/admin/buyers');
+  allBuyers = d.buyers || [];
+  filterBuyers(document.getElementById('buyerSearch').value||'');
+}
+
+function filterBuyers(q) {
+  const query = q.toLowerCase();
+  const list = query ? allBuyers.filter(b => (b.business_name||'').toLowerCase().includes(query) || (b.phone||'').includes(query)) : allBuyers;
+  const el = document.getElementById('buyersList');
+  if (!list.length) { el.innerHTML='<div style="text-align:center;color:#475569;padding:48px;font-size:12px">No buyers found</div>'; return; }
+  el.innerHTML = list.map(b => `
+    <div class="tbl-row">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="flex:1;min-width:180px">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:700;color:#e2e8f0">${b.business_name}</span>
+            ${activeBadge(b.is_active)}
+            ${b.is_verified ? '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#0c2a4e;color:#38bdf8;border:1px solid #1e3a5f">VERIFIED</span>' : ''}
+          </div>
+          <div style="font-size:11px;color:#64748b;margin-top:3px">📞 ${b.phone} | 🆔 #${b.id}</div>
+          <div style="font-size:11px;margin-top:3px">
+            <span style="color:${parseFloat(b.wallet_balance)>=3000?'#34d399':'#f87171'};font-weight:900">Wallet: ${inr(b.wallet_balance)}</span>
+            <span style="color:#475569;margin-left:10px">Bids: ${b.total_bids_placed} | Wins: ${b.total_auctions_won}</span>
+          </div>
+          <div style="font-size:10px;color:#475569;margin-top:2px">Joined: ${fmt(b.created_at)}</div>
+        </div>
+        <div class="action-group">
+          <button onclick="openWalletModal(${b.id},'${b.business_name.replace(/'/g,"\\'")}',${b.wallet_balance})" class="btn btn-green">💰 Wallet</button>
+          <button onclick="openPinModal(${b.id},'buyer','${b.business_name.replace(/'/g,"\\'")}') " class="btn btn-purple">🔑 PIN</button>
+          <button onclick="toggleBuyerStatus(${b.id},'${b.business_name.replace(/'/g,"\\'")}',${b.is_active},this)" class="btn ${b.is_active?'btn-amber':'btn-green'}">${b.is_active?'🚫 Block':'✅ Unblock'}</button>
+          <button onclick="toggleBuyerVerify(${b.id},'${b.business_name.replace(/'/g,"\\'")}',${b.is_verified},this)" class="btn btn-blue">${b.is_verified?'✓ Unverify':'✓ Verify'}</button>
+          <button onclick="deleteBuyer(${b.id},'${b.business_name.replace(/'/g,"\\'")}',this)" class="btn btn-red">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openWalletModal(id, name, bal) {
+  document.getElementById('wlBuyerId').value = id;
+  document.getElementById('wlBuyerName').textContent = name;
+  document.getElementById('wlCurrentBal').textContent = inr(bal);
+  openModal('modalWallet');
+}
+
+async function submitWalletAdjust(e) {
+  e.preventDefault();
+  const id = document.getElementById('wlBuyerId').value;
+  const action = document.getElementById('wlAction').value;
+  const amount = parseFloat(document.getElementById('wlAmount').value);
+  const d = await apiFetch(`/api/admin/buyers/${id}/adjust-wallet`, { method:'POST', body: JSON.stringify({ amount, action }) });
+  if (d.success) { toast(d.message, 'success'); closeModal('modalWallet'); loadBuyers(); loadStats(); }
+  else toast(d.error, 'error');
+}
+
+function openPinModal(id, type, name) {
+  document.getElementById('pinTargetId').value = id;
+  document.getElementById('pinTargetType').value = type;
+  document.getElementById('pinTargetName').textContent = name;
+  document.getElementById('pinNewValue').value = '';
+  openModal('modalPin');
+}
+
+async function submitPinReset(e) {
+  e.preventDefault();
+  const id = document.getElementById('pinTargetId').value;
+  const type = document.getElementById('pinTargetType').value;
+  const newPin = document.getElementById('pinNewValue').value;
+  const d = await apiFetch(`/api/admin/${type}s/${id}/reset-pin`, { method:'POST', body: JSON.stringify({ newPin }) });
+  if (d.success) { toast(d.message, 'success'); closeModal('modalPin'); }
+  else toast(d.error, 'error');
+}
+
+async function toggleBuyerStatus(id, name, currentActive, btn) {
+  const action = currentActive ? 'block' : 'unblock';
+  if (!await confirmAction(`${action.toUpperCase()} buyer "${name}"?`)) return;
+  btn.disabled=true;
+  const d = await apiFetch(`/api/admin/buyers/${id}/toggle-status`, { method:'POST' });
+  if (d.success) { toast(d.message, 'success'); loadBuyers(); }
+  else { toast(d.error,'error'); btn.disabled=false; }
+}
+
+async function toggleBuyerVerify(id, name, currentVerified, btn) {
+  if (!await confirmAction(`${currentVerified?'UN-VERIFY':'VERIFY'} buyer "${name}"?`)) return;
+  btn.disabled=true;
+  const d = await apiFetch(`/api/admin/buyers/${id}/toggle-verify`, { method:'POST' });
+  if (d.success) { toast(d.message, 'success'); loadBuyers(); }
+  else { toast(d.error,'error'); btn.disabled=false; }
+}
+
+async function deleteBuyer(id, name, btn) {
+  if (!await confirmAction(`PERMANENTLY DELETE buyer "${name}" (#${id})? This cannot be undone!`)) return;
+  btn.disabled=true;
+  const d = await apiFetch(`/api/admin/buyers/${id}`, { method:'DELETE' });
+  if (d.success) { toast(d.message, 'success'); loadBuyers(); loadStats(); }
+  else { toast(d.error,'error'); btn.disabled=false; }
+}
+
+function openCreateBuyerModal() { openModal('modalCreateBuyer'); }
+
+async function submitCreateBuyer(e) {
+  e.preventDefault();
+  const body = {
+    business_name: document.getElementById('cbName').value,
+    phone: document.getElementById('cbPhone').value,
+    pin: document.getElementById('cbPin').value || '1234',
+    initial_balance: parseFloat(document.getElementById('cbBalance').value)||0
+  };
+  const d = await apiFetch('/api/admin/buyers/create', { method:'POST', body: JSON.stringify(body) });
+  if (d.success) { toast(d.message, 'success'); closeModal('modalCreateBuyer'); e.target.reset(); loadBuyers(); loadStats(); }
+  else toast(d.error, 'error');
+}
+
+// ═══════════════════════════════════════════════════════
+// SHOWROOMS
+// ═══════════════════════════════════════════════════════
+async function loadShowrooms() {
+  const d = await apiFetch('/api/admin/showrooms');
+  allShowrooms = d.showrooms || [];
+  filterShowrooms(document.getElementById('showroomSearch').value||'');
+}
+
+function filterShowrooms(q) {
+  const query = q.toLowerCase();
+  const list = query ? allShowrooms.filter(s => (s.name||'').toLowerCase().includes(query) || (s.phone||'').includes(query)) : allShowrooms;
+  const el = document.getElementById('showroomsList');
+  if (!list.length) { el.innerHTML='<div style="text-align:center;color:#475569;padding:48px;font-size:12px">No showrooms found</div>'; return; }
+  el.innerHTML = list.map(s => `
+    <div class="tbl-row">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="flex:1;min-width:180px">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:700;color:#e2e8f0">${s.name}</span>
+            ${activeBadge(s.is_active)}
+          </div>
+          <div style="font-size:11px;color:#64748b;margin-top:3px">📞 ${s.phone} | 🆔 #${s.id}</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px">📍 ${s.address||'—'}</div>
+          <div style="font-size:11px;color:#475569;margin-top:2px">Auctions: ${s.total_auctions} | Live: <span style="color:#34d399">${s.live_auctions}</span></div>
+          <div style="font-size:10px;color:#475569;margin-top:2px">Joined: ${fmt(s.created_at)}</div>
+        </div>
+        <div class="action-group">
+          <button onclick="openPinModal(${s.id},'showroom','${s.name.replace(/'/g,"\\'")}') " class="btn btn-purple">🔑 PIN</button>
+          <button onclick="toggleShowroomStatus(${s.id},'${s.name.replace(/'/g,"\\'")}',${s.is_active},this)" class="btn ${s.is_active?'btn-amber':'btn-green'}">${s.is_active?'🚫 Deactivate':'✅ Activate'}</button>
+          <button onclick="deleteShowroom(${s.id},'${s.name.replace(/'/g,"\\'")}',this)" class="btn btn-red">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function toggleShowroomStatus(id, name, currentActive, btn) {
+  if (!await confirmAction(`${currentActive?'DEACTIVATE':'ACTIVATE'} showroom "${name}"?`)) return;
+  btn.disabled=true;
+  const d = await apiFetch(`/api/admin/showrooms/${id}/toggle-status`, { method:'POST' });
+  if (d.success) { toast(d.message, 'success'); loadShowrooms(); }
+  else { toast(d.error,'error'); btn.disabled=false; }
+}
+
+async function deleteShowroom(id, name, btn) {
+  if (!await confirmAction(`PERMANENTLY DELETE showroom "${name}" (#${id})? All auctions may be affected!`)) return;
+  btn.disabled=true;
+  const d = await apiFetch(`/api/admin/showrooms/${id}`, { method:'DELETE' });
+  if (d.success) { toast(d.message, 'success'); loadShowrooms(); loadStats(); }
+  else { toast(d.error,'error'); btn.disabled=false; }
+}
+
+function openCreateShowroomModal() { openModal('modalCreateShowroom'); }
+
+async function submitCreateShowroom(e) {
+  e.preventDefault();
+  const pin = document.getElementById('csPin').value || '1234';
+  const body = {
+    name: document.getElementById('csName').value,
+    phone: document.getElementById('csPhone').value,
+    address: document.getElementById('csAddress').value
+  };
+  // Create showroom first
+  const d = await apiFetch('/api/admin/showrooms/create', { method:'POST', body: JSON.stringify(body) });
+  if (d.success) {
+    // Reset PIN to custom value if provided
+    if (pin !== '1234' && d.showroom) {
+      await apiFetch(`/api/admin/showrooms/${d.showroom.id}/reset-pin`, { method:'POST', body: JSON.stringify({ newPin: pin }) });
+    }
+    // Auto-approve
+    if (d.showroom && !d.showroom.is_approved) {
+      await apiFetch(`/api/admin/approve/showroom/${d.showroom.id}`, { method:'POST' });
+    }
+    toast(d.message, 'success');
+    closeModal('modalCreateShowroom');
+    e.target.reset();
+    loadShowrooms(); loadStats();
+  } else toast(d.error, 'error');
+}
+
+// ═══════════════════════════════════════════════════════
+// LEDGER
+// ═══════════════════════════════════════════════════════
+async function loadLedger() {
+  const d = await apiFetch('/api/admin/transactions');
+  const list = d.transactions || [];
+  const el = document.getElementById('ledgerList');
+  if (!list.length) { el.innerHTML='<div style="text-align:center;color:#475569;padding:48px;font-size:12px">No transactions yet</div>'; return; }
+  el.innerHTML = list.map(tx => `
+    <div class="tbl-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="flex:1;min-width:180px">
+        <div style="font-size:12px;font-weight:700;color:#e2e8f0">${tx.vehicle_model||'—'} <span style="color:#475569;font-weight:400">#${tx.auction_id}</span></div>
+        <div style="font-size:10px;color:#64748b;margin-top:2px">${tx.buyer_name} | ${tx.showroom_name}</div>
+        <div style="font-size:10px;color:#475569;margin-top:1px">📅 ${fmt(tx.created_at)} | ${tx.fee_type}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:11px;color:#94a3b8">Deal: ${inr(tx.final_bid)}</div>
+        <div style="font-weight:900;color:#34d399">Fee: ${inr(tx.amount)}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════
+function loadSettings() { loadStats(); }
+
+async function saveSettings(e) {
+  e.preventDefault();
+  const body = {
+    minWalletBalanceToBid: document.getElementById('cfgMinWallet').value,
+    handoverPlatformFee: document.getElementById('cfgHandoverFee').value,
+    minBidIncrement: document.getElementById('cfgMinIncrement').value,
+    defaultAuctionDurationMinutes: document.getElementById('cfgAuctionDuration').value
+  };
+  const d = await apiFetch('/api/admin/config', { method:'POST', body: JSON.stringify(body) });
+  if (d.success) toast('✅ Platform settings saved! Changes are live.', 'success');
+  else toast(d.error, 'error');
+}
+
+// ═══════════════════════════════════════════════════════
+// CLOSE MODALS ON OVERLAY CLICK
+// ═══════════════════════════════════════════════════════
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.style.display='none'; });
+});
+
+// ═══════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════
+checkAuth();
+</script>
 </body>
 </html>
