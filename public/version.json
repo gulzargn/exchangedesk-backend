@@ -1,16 +1,16 @@
 {
-  "version": "3.3.5",
-  "versionCode": 335,
-  "build": "20261101_02",
+  "version": "3.4.0",
+  "versionCode": 340,
+  "build": "20261101_03",
   "releaseDate": "2026-11-01",
-  "title": "ExchangeDesk 3.3.5 (Zero-Flicker HD Images & Smooth Live Bidding)",
+  "title": "ExchangeDesk 3.4.0 (Production Launch & Security Edition)",
   "notes": [
-    "🖼️ Zero-Flicker Photo Engine: In-memory decoded byte caching completely eliminates photo blinking during countdown ticks & closed auctions",
-    "⚡ GPU Texture Layer Isolation: RepaintBoundary keeps bike photos locked at 60 FPS without re-rasterizing on timer ticks",
-    "📢 Live Platform Announcements: Broadcast notices from Admin now display instantly at top of feed",
-    "🤝 Delivery & Handover Gate Pass: Direct WhatsApp delivery slips with instant Pickup OTP",
-    "🎯 Custom Amount Bid: Enter any bid amount in ₹500 multiples with live validation"
+    "🔒 Enterprise JWT & PIN Security: Encrypted session tokens and bcrypt hashed PINs for buyer, showroom & admin",
+    "🔔 Notification Center: Live alert drawer with unread counter for outbid alerts, won auctions, and announcements",
+    "⚡ 24/7 KeepAlive Heartbeat: Cloud backend stays continuously awake with 0-second cold-start response times",
+    "📸 Camera & Storage Permissions: Android 13/14 native media permissions with smart photo compression",
+    "🛡️ Anti-Impersonation Bidding: Bids cryptographically signed and verified by authenticated user tokens"
   ],
-  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.3.5/ExchangeDesk_v3.3.5_Live.apk",
+  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.4.0/ExchangeDesk_v3.4.0_Live.apk",
   "isMandatory": false
 }

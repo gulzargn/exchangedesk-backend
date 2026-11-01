@@ -13,6 +13,8 @@ import { createBuyersRouter } from './routes/buyers.js';
 import { createShowroomsRouter } from './routes/showrooms.js';
 import { createAdminRouter } from './routes/admin.js';
 import { createAuthRouter } from './routes/auth.js';
+import { requireAdmin } from './utils/auth.js';
+import { startKeepAliveService } from './utils/keepAlive.js';
 import { auctionMutex } from './utils/lock.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -52,7 +54,7 @@ app.use('/api/auth', createAuthRouter());
 app.use('/api/auctions', createAuctionsRouter(io));
 app.use('/api/buyers', createBuyersRouter(io));
 app.use('/api/showrooms', createShowroomsRouter());
-app.use('/api/admin', createAdminRouter(io));
+app.use('/api/admin', requireAdmin, createAdminRouter(io));
 
 // In-App Auto-Update Version Endpoint
 app.get(['/api/version', '/api/app/version', '/version'], (req, res) => {
@@ -96,6 +98,9 @@ async function start() {
   try {
     await initDatabase();
     setupAuctionSocket(io);
+
+    // Start KeepAlive background service (prevents Render free tier from sleeping)
+    startKeepAliveService();
 
     server.listen(config.port, () => {
       console.log('================================================================');

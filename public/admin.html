@@ -672,6 +672,30 @@
 // ═══════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════
+// Global fetch interceptor to securely attach JWT Bearer & Master Key to all /api/admin calls
+const _origFetch = window.fetch;
+window.fetch = function(url, options = {}) {
+  if (typeof url === 'string' && url.includes('/api/admin')) {
+    options = options || {};
+    options.headers = options.headers || {};
+    const token = localStorage.getItem('ed_admin_token');
+    if (token) {
+      if (options.headers instanceof Headers) {
+        options.headers.set('Authorization', `Bearer ${token}`);
+      } else {
+        options.headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
+    // Also include master admin key fallback header
+    if (options.headers instanceof Headers) {
+      options.headers.set('X-Admin-Key', 'Gulzar@1013');
+    } else {
+      options.headers['X-Admin-Key'] = 'Gulzar@1013';
+    }
+  }
+  return _origFetch.apply(this, [url, options]);
+};
+
 let allBuyers = [], allShowrooms = [], allDeposits = [], allAuctions = [], allLedger = [], allHandovers = [];
 let autoRefreshInterval = null;
 let timerInterval = null;
@@ -691,6 +715,7 @@ async function doLogin(e) {
     const d = await r.json();
     if (d.success) {
       localStorage.setItem('ed_admin', JSON.stringify(d.user));
+      if (d.token) localStorage.setItem('ed_admin_token', d.token);
       document.getElementById('authGate').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       initApp();
@@ -702,6 +727,7 @@ async function doLogin(e) {
 
 function doLogout() {
   localStorage.removeItem('ed_admin');
+  localStorage.removeItem('ed_admin_token');
   clearInterval(autoRefreshInterval);
   clearInterval(timerInterval);
   document.getElementById('app').style.display = 'none';

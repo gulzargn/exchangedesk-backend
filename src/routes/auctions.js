@@ -3,6 +3,8 @@ import { query, getClient } from '../db/index.js';
 import { generatePickupOtp } from '../utils/otp.js';
 import { maskRcNumber, sanitizeAuctionForBuyer } from '../utils/masking.js';
 import { config } from '../config.js';
+import { optimizeAuctionPhotos } from '../utils/imageStorage.js';
+import { optionalAuthenticateToken } from '../utils/auth.js';
 
 export function createAuctionsRouter(io) {
   const router = express.Router();
@@ -147,7 +149,8 @@ export function createAuctionsRouter(io) {
       const endsAt = new Date(startsAt.getTime() + duration * 60 * 1000);
       const pickupOtp = generatePickupOtp();
 
-      const photosJson = typeof photos === 'string' ? photos : JSON.stringify(photos || []);
+      const processedPhotos = await optimizeAuctionPhotos(photos);
+      const photosJson = JSON.stringify(processedPhotos);
       const engineSoundMedia = typeof engine_sound_video === 'string' ? engine_sound_video : '';
       const conditionReportJson = typeof condition_report === 'string' ? condition_report : JSON.stringify(condition_report || {});
 
@@ -667,11 +670,16 @@ export function createAuctionsRouter(io) {
    * POST /api/auctions/bid
    * HTTP REST fallback for placing bids (useful on serverless environments like Vercel)
    */
-  router.post('/bid', async (req, res) => {
+  router.post('/bid', optionalAuthenticateToken, async (req, res) => {
     const { auctionId, buyerId, incrementAmount } = req.body;
 
     if (!auctionId || !buyerId || !incrementAmount) {
       return res.status(400).json({ error: 'Missing auctionId, buyerId, or incrementAmount' });
+    }
+
+    // Security check: If authenticated as buyer, ensure user is not spoofing another buyer ID
+    if (req.user && req.user.role === 'buyer' && parseInt(req.user.id, 10) !== parseInt(buyerId, 10)) {
+      return res.status(403).json({ success: false, error: 'Security violation: Cannot place bid for another buyer account' });
     }
 
     const increment = parseFloat(incrementAmount);

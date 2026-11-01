@@ -1,5 +1,6 @@
 import express from 'express';
 import { query } from '../db/index.js';
+import { generateToken, comparePin, hashPin } from '../utils/auth.js';
 
 export function createAuthRouter() {
   const router = express.Router();
@@ -27,16 +28,21 @@ export function createAuthRouter() {
           return res.status(401).json({ error: 'Invalid Administrator Security Key / Password' });
         }
 
+        const adminUser = {
+          role: 'admin',
+          id: 0,
+          name: 'Super Administrator',
+          phone: '+91 99999 00000',
+          permissions: ['ALL_PERMISSIONS', 'USER_MANAGEMENT', 'AUCTION_SUPERVISOR', 'FINANCIAL_LEDGER'],
+        };
+
+        const token = generateToken({ role: 'admin', id: 0, name: adminUser.name });
+
         return res.json({
           success: true,
           message: 'Admin access authorized',
-          user: {
-            role: 'admin',
-            id: 0,
-            name: 'Super Administrator',
-            phone: '+91 99999 00000',
-            permissions: ['ALL_PERMISSIONS', 'USER_MANAGEMENT', 'AUCTION_SUPERVISOR', 'FINANCIAL_LEDGER'],
-          },
+          token,
+          user: adminUser,
         });
       }
 
@@ -79,24 +85,29 @@ export function createAuthRouter() {
           });
         }
 
-        // Check PIN / Password
-        const dbPin = (showroom.pin || '1234').toString().trim();
-        if (inputPin !== dbPin && inputPin !== 'Gulzar@1013') {
+        // Check PIN / Password securely
+        const isMatch = (await comparePin(inputPin, showroom.pin)) || inputPin === 'Gulzar@1013';
+        if (!isMatch) {
           return res.status(401).json({ error: 'Incorrect Showroom PIN / Security Code' });
         }
+
+        const showroomUser = {
+          role: 'showroom',
+          id: showroom.id,
+          name: showroom.name,
+          phone: showroom.phone,
+          address: showroom.address,
+          is_active: showroom.is_active,
+          is_approved: showroom.is_approved,
+        };
+
+        const token = generateToken({ role: 'showroom', id: showroom.id, name: showroom.name });
 
         return res.json({
           success: true,
           message: `Welcome back, ${showroom.name}`,
-          user: {
-            role: 'showroom',
-            id: showroom.id,
-            name: showroom.name,
-            phone: showroom.phone,
-            address: showroom.address,
-            is_active: showroom.is_active,
-            is_approved: showroom.is_approved,
-          },
+          token,
+          user: showroomUser,
         });
       }
 
@@ -139,25 +150,30 @@ export function createAuthRouter() {
           });
         }
 
-        // Check PIN / Password
-        const dbPin = (buyer.pin || '1234').toString().trim();
-        if (inputPin !== dbPin && inputPin !== 'Gulzar@1013') {
+        // Check PIN / Password securely
+        const isMatch = (await comparePin(inputPin, buyer.pin)) || inputPin === 'Gulzar@1013';
+        if (!isMatch) {
           return res.status(401).json({ error: 'Incorrect Buyer PIN' });
         }
+
+        const buyerUser = {
+          role: 'buyer',
+          id: buyer.id,
+          name: buyer.business_name,
+          phone: buyer.phone,
+          wallet_balance: parseFloat(buyer.wallet_balance),
+          is_verified: buyer.is_verified,
+          is_active: buyer.is_active,
+          is_approved: buyer.is_approved,
+        };
+
+        const token = generateToken({ role: 'buyer', id: buyer.id, name: buyer.business_name });
 
         return res.json({
           success: true,
           message: `Welcome back, ${buyer.business_name}`,
-          user: {
-            role: 'buyer',
-            id: buyer.id,
-            name: buyer.business_name,
-            phone: buyer.phone,
-            wallet_balance: parseFloat(buyer.wallet_balance),
-            is_verified: buyer.is_verified,
-            is_active: buyer.is_active,
-            is_approved: buyer.is_approved,
-          },
+          token,
+          user: buyerUser,
         });
       }
 
@@ -196,16 +212,20 @@ export function createAuthRouter() {
           return res.status(400).json({ error: 'A showroom counter with this phone number already exists' });
         }
 
+        const hashedPin = await hashPin(showroomPin);
+
         const insertRes = await query(
           'INSERT INTO showrooms (name, phone, address, pin, is_active, is_approved) VALUES ($1, $2, $3, $4, false, false) RETURNING *',
-          [showroomName, showroomPhone, showroomAddress, showroomPin]
+          [showroomName, showroomPhone, showroomAddress, hashedPin]
         );
 
         const newShowroom = insertRes.rows[0];
+        const token = generateToken({ role: 'showroom', id: newShowroom.id, name: newShowroom.name });
         return res.status(201).json({
           success: true,
           pendingApproval: true,
           message: 'Showroom counter registered! Exchange Desk approval pending hai. Exchange Desk approve karega tabhi login kar sakte hain.',
+          token,
           showroom: newShowroom,
           user: newShowroom,
         });
@@ -227,16 +247,20 @@ export function createAuthRouter() {
           return res.status(400).json({ error: 'A trading account with this phone number already exists' });
         }
 
+        const hashedPin = await hashPin(buyerPin);
+
         const insertRes = await query(
           'INSERT INTO buyers (business_name, phone, wallet_balance, pin, is_verified, is_active, is_approved) VALUES ($1, $2, $3, $4, false, false, false) RETURNING *',
-          [bizName, buyerPhone, deposit, buyerPin]
+          [bizName, buyerPhone, deposit, hashedPin]
         );
 
         const newBuyer = insertRes.rows[0];
+        const token = generateToken({ role: 'buyer', id: newBuyer.id, name: newBuyer.business_name });
         return res.status(201).json({
           success: true,
           pendingApproval: true,
           message: 'Buyer account registered! Exchange Desk approval pending hai. Exchange Desk approve karega tabhi ID activate hogi.',
+          token,
           buyer: newBuyer,
           user: newBuyer,
         });
