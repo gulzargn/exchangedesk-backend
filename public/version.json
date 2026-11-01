@@ -1,16 +1,16 @@
 {
-  "version": "3.4.0",
-  "versionCode": 340,
-  "build": "20261101_03",
+  "version": "3.4.1",
+  "versionCode": 341,
+  "build": "20261101_04",
   "releaseDate": "2026-11-01",
-  "title": "ExchangeDesk 3.4.0 (Production Launch & Security Edition)",
+  "title": "ExchangeDesk 3.4.1 (Ultra-Smooth 120 Hz High Refresh Rate Edition)",
   "notes": [
+    "🚀 120 Hz Ultra-Smooth Refresh Rate: Native Android display mode & Flutter VSync sync for buttery 120 FPS scrolling",
     "🔒 Enterprise JWT & PIN Security: Encrypted session tokens and bcrypt hashed PINs for buyer, showroom & admin",
     "🔔 Notification Center: Live alert drawer with unread counter for outbid alerts, won auctions, and announcements",
     "⚡ 24/7 KeepAlive Heartbeat: Cloud backend stays continuously awake with 0-second cold-start response times",
-    "📸 Camera & Storage Permissions: Android 13/14 native media permissions with smart photo compression",
-    "🛡️ Anti-Impersonation Bidding: Bids cryptographically signed and verified by authenticated user tokens"
+    "📸 Camera & Storage Permissions: Android 13/14 native media permissions with smart photo compression"
   ],
-  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.4.0/ExchangeDesk_v3.4.0_Live.apk",
+  "apkUrl": "https://github.com/gulzargn/exchangedesk-backend/releases/download/v3.4.1/ExchangeDesk_v3.4.1_Live.apk",
   "isMandatory": false
 }
