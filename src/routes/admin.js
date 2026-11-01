@@ -1,6 +1,7 @@
 import express from 'express';
 import { query, getClient } from '../db/index.js';
 import { config } from '../config.js';
+import { generatePickupOtp } from '../utils/otp.js';
 
 export function createAdminRouter(io) {
   const router = express.Router();
@@ -969,8 +970,6 @@ export function createAdminRouter(io) {
   });
 
   /**
-   * POST /api/admin/showrooms/create (override already exists but via createShowroom)
-   * alias already handled above, adding buyer stats endpoint
    * GET /api/admin/activity - recent platform activity (bids + approvals)
    */
   router.get('/activity', async (req, res) => {
@@ -984,6 +983,312 @@ export function createAdminRouter(io) {
          ORDER BY b.placed_at DESC LIMIT 15`
       );
       return res.json({ success: true, activity: bids.rows });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
+   * GET /api/admin/handovers
+   * Closed and Completed deals awaiting or completed vehicle pickup with OTPs
+   */
+  router.get('/handovers', async (req, res) => {
+    try {
+      const result = await query(
+        `SELECT a.id, a.vehicle_model, a.rc_number, a.manufacturing_year, a.km_driven,
+                a.base_price, a.current_highest_bid as final_bid, a.status, a.pickup_otp,
+                a.starts_at, a.ends_at, a.created_at,
+                s.id as showroom_id, s.name as showroom_name, s.phone as showroom_phone, s.address as showroom_address,
+                b.id as winner_id, b.business_name as winner_name, b.phone as winner_phone, b.wallet_balance as winner_wallet,
+                t.id as transaction_id, t.created_at as handover_completed_at
+         FROM auctions a
+         JOIN showrooms s ON a.showroom_id = s.id
+         LEFT JOIN buyers b ON a.highest_bidder_id = b.id
+         LEFT JOIN platform_transactions t ON (t.auction_id = a.id AND t.fee_type = 'HANDOVER_PLATFORM_FEE')
+         WHERE a.status IN ('CLOSED', 'COMPLETED')
+         ORDER BY a.ends_at DESC LIMIT 150`
+      );
+      return res.json({
+        success: true,
+        handovers: result.rows.map(h => ({
+          ...h,
+          base_price: parseFloat(h.base_price),
+          final_bid: parseFloat(h.final_bid),
+          winner_wallet: h.winner_wallet ? parseFloat(h.winner_wallet) : 0,
+        })),
+      });
+    } catch (err) {
+      console.error('[API:adminHandovers] Error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
+   * POST /api/admin/auctions/:id/force-handover
+   * Admin emergency override to complete vehicle handover without showroom phone
+   */
+  router.post('/auctions/:id/force-handover', async (req, res) => {
+    const { id } = req.params;
+    const { deductFee = true, notes = 'Handover verified and force-completed by Super Admin' } = req.body;
+    const client = await getClient();
+    try {
+      await client.query('BEGIN');
+      const auctionRes = await client.query(
+        `SELECT a.*, s.name as showroom_name FROM auctions a JOIN showrooms s ON a.showroom_id = s.id WHERE a.id = $1 FOR UPDATE`,
+        [id]
+      );
+      if (auctionRes.rows.length === 0) throw new Error('Auction not found');
+      const auction = auctionRes.rows[0];
+
+      if (auction.status === 'COMPLETED') {
+        throw new Error('Handover is already COMPLETED');
+      }
+      if (!auction.highest_bidder_id) {
+        throw new Error('Cannot handover an auction with no winning bidder');
+      }
+
+      const fee = config.handoverPlatformFee || 500;
+      let newBalance = null;
+
+      if (deductFee) {
+        const buyerRes = await client.query('SELECT wallet_balance FROM buyers WHERE id = $1 FOR UPDATE', [auction.highest_bidder_id]);
+        if (buyerRes.rows.length > 0) {
+          const currentBal = parseFloat(buyerRes.rows[0].wallet_balance);
+          newBalance = Math.max(0, currentBal - fee);
+          await client.query('UPDATE buyers SET wallet_balance = $1 WHERE id = $2', [newBalance, auction.highest_bidder_id]);
+          await client.query(
+            `INSERT INTO platform_transactions (auction_id, buyer_id, amount, fee_type, created_at)
+             VALUES ($1, $2, $3, 'HANDOVER_PLATFORM_FEE', NOW())`,
+            [id, auction.highest_bidder_id, fee]
+          );
+        }
+      }
+
+      await client.query("UPDATE auctions SET status = 'COMPLETED' WHERE id = $1", [id]);
+      await client.query('COMMIT');
+
+      if (io) {
+        io.to(`auction:${id}`).emit('auction_completed', {
+          auctionId: parseInt(id, 10),
+          winnerId: auction.highest_bidder_id,
+          finalBid: parseFloat(auction.current_highest_bid),
+          reason: 'ADMIN_FORCE_HANDOVER',
+        });
+        io.to('auctions_feed').emit('feed_auction_completed', { auctionId: parseInt(id, 10) });
+      }
+
+      return res.json({
+        success: true,
+        message: `Auction #${id} Handover marked COMPLETED! Vehicle released to winner.`,
+      });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('[API:adminForceHandover] Error:', err);
+      return res.status(400).json({ error: err.message });
+    } finally {
+      client.release();
+    }
+  });
+
+  /**
+   * POST /api/admin/auctions/:id/default-penalty
+   * Penalizes a winning buyer who failed to pick up bike or defaulted on deal
+   */
+  router.post('/auctions/:id/default-penalty', async (req, res) => {
+    const { id } = req.params;
+    const { penaltyAmount = 1000, reason = 'Buyer defaulted on vehicle pickup' } = req.body;
+    const client = await getClient();
+    try {
+      await client.query('BEGIN');
+      const auctionRes = await client.query('SELECT * FROM auctions WHERE id = $1 FOR UPDATE', [id]);
+      if (auctionRes.rows.length === 0) throw new Error('Auction not found');
+      const auction = auctionRes.rows[0];
+
+      if (!auction.highest_bidder_id) {
+        throw new Error('No winning buyer to penalize');
+      }
+
+      const penalty = parseFloat(penaltyAmount);
+      const buyerRes = await client.query('SELECT wallet_balance, business_name FROM buyers WHERE id = $1 FOR UPDATE', [auction.highest_bidder_id]);
+      if (buyerRes.rows.length === 0) throw new Error('Buyer not found');
+
+      const currentBal = parseFloat(buyerRes.rows[0].wallet_balance);
+      const newBal = Math.max(0, currentBal - penalty);
+
+      await client.query('UPDATE buyers SET wallet_balance = $1 WHERE id = $2', [newBal, auction.highest_bidder_id]);
+      await client.query(
+        `INSERT INTO platform_transactions (auction_id, buyer_id, amount, fee_type, created_at)
+         VALUES ($1, $2, $3, 'BUYER_DEFAULT_PENALTY', NOW())`,
+        [id, auction.highest_bidder_id, penalty]
+      );
+
+      // Cancel the defaulted deal so vehicle can be relisted
+      await client.query("UPDATE auctions SET status = 'CANCELLED' WHERE id = $1", [id]);
+      await client.query('COMMIT');
+
+      if (io) {
+        io.emit('buyer_wallet_updated', { buyerId: auction.highest_bidder_id, newBalance: newBal });
+        io.to('auctions_feed').emit('feed_auction_cancelled', { auctionId: parseInt(id, 10), reason });
+      }
+
+      return res.json({
+        success: true,
+        message: `Buyer "${buyerRes.rows[0].business_name}" penalized ₹${penalty.toLocaleString('en-IN')}. Auction marked CANCELLED for relisting.`,
+        newBalance: newBal,
+      });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('[API:adminDefaultPenalty] Error:', err);
+      return res.status(400).json({ error: err.message });
+    } finally {
+      client.release();
+    }
+  });
+
+  /**
+   * POST /api/admin/auctions/create
+   * Super Admin creates a flash auction on behalf of any showroom
+   */
+  router.post('/auctions/create', async (req, res) => {
+    try {
+      const {
+        showroom_id, vehicle_model, manufacturing_year, km_driven,
+        base_price, duration_minutes = 10, rc_number,
+        photos = [], engine_sound_video = '', condition_report = {}
+      } = req.body;
+
+      if (!showroom_id || !vehicle_model || !base_price || !rc_number) {
+        return res.status(400).json({ error: 'Missing showroom_id, vehicle_model, base_price, or rc_number' });
+      }
+
+      const startsAt = new Date();
+      const endsAt = new Date(startsAt.getTime() + (parseInt(duration_minutes, 10) || 10) * 60 * 1000);
+      const pickupOtp = generatePickupOtp();
+      const photosJson = typeof photos === 'string' ? photos : JSON.stringify(photos);
+      const conditionReportJson = typeof condition_report === 'string' ? condition_report : JSON.stringify(condition_report);
+
+      const ins = await query(
+        `INSERT INTO auctions (showroom_id, vehicle_model, manufacturing_year, km_driven, rc_number,
+                               base_price, current_highest_bid, status, starts_at, ends_at,
+                               pickup_otp, photos, engine_sound_video, condition_report)
+         VALUES ($1, $2, $3, $4, $5, $6, $6, 'LIVE', $7, $8, $9, $10, $11, $12)
+         RETURNING *`,
+        [
+          parseInt(showroom_id, 10),
+          vehicle_model.trim(),
+          parseInt(manufacturing_year, 10) || 2022,
+          parseInt(km_driven, 10) || 0,
+          rc_number.trim(),
+          parseFloat(base_price),
+          startsAt,
+          endsAt,
+          pickupOtp,
+          photosJson,
+          engine_sound_video,
+          conditionReportJson,
+        ]
+      );
+
+      const created = ins.rows[0];
+      if (io) {
+        io.emit('feed_auction_created', { auctionId: created.id, vehicleModel: created.vehicle_model });
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: `Auction #${created.id} (${created.vehicle_model}) created & LIVE on platform!`,
+        auction: created,
+      });
+    } catch (err) {
+      console.error('[API:adminCreateAuction] Error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
+   * PUT /api/admin/auctions/:id
+   * Super Admin edits existing auction details
+   */
+  router.put('/auctions/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { vehicle_model, base_price, manufacturing_year, km_driven, rc_number, status } = req.body;
+      const check = await query('SELECT * FROM auctions WHERE id = $1', [id]);
+      if (check.rows.length === 0) return res.status(404).json({ error: 'Auction not found' });
+
+      const updates = [];
+      const values = [];
+      let idx = 1;
+
+      if (vehicle_model) { updates.push(`vehicle_model = $${idx++}`); values.push(vehicle_model.trim()); }
+      if (base_price !== undefined) { updates.push(`base_price = $${idx++}`); values.push(parseFloat(base_price)); }
+      if (manufacturing_year) { updates.push(`manufacturing_year = $${idx++}`); values.push(parseInt(manufacturing_year, 10)); }
+      if (km_driven !== undefined) { updates.push(`km_driven = $${idx++}`); values.push(parseInt(km_driven, 10)); }
+      if (rc_number) { updates.push(`rc_number = $${idx++}`); values.push(rc_number.trim()); }
+      if (status) { updates.push(`status = $${idx++}`); values.push(status.trim().toUpperCase()); }
+
+      if (updates.length === 0) return res.json({ success: true, message: 'No updates provided' });
+
+      values.push(id);
+      await query(`UPDATE auctions SET ${updates.join(', ')} WHERE id = $${idx}`, values);
+
+      return res.json({ success: true, message: `Auction #${id} updated successfully` });
+    } catch (err) {
+      console.error('[API:adminUpdateAuction] Error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
+   * Announcement Endpoints
+   */
+  router.get('/announcement', async (req, res) => {
+    try {
+      const r = await query('SELECT * FROM announcements WHERE is_active = true ORDER BY created_at DESC LIMIT 1');
+      return res.json({ success: true, announcement: r.rows[0] || null });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.post('/announcement', async (req, res) => {
+    try {
+      const { message, type = 'info' } = req.body;
+      if (!message || !message.trim()) return res.status(400).json({ error: 'Message cannot be empty' });
+
+      await query('UPDATE announcements SET is_active = false');
+      const r = await query(
+        'INSERT INTO announcements (message, type, is_active) VALUES ($1, $2, true) RETURNING *',
+        [message.trim(), type]
+      );
+
+      const activeAnn = r.rows[0];
+      if (io) {
+        io.emit('platform_announcement', {
+          id: activeAnn.id,
+          message: activeAnn.message,
+          type: activeAnn.type,
+          isActive: true,
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: 'Announcement broadcasted live to all mobile apps & portals!',
+        announcement: activeAnn,
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.delete('/announcement', async (req, res) => {
+    try {
+      await query('UPDATE announcements SET is_active = false');
+      if (io) {
+        io.emit('platform_announcement', { message: null, isActive: false });
+      }
+      return res.json({ success: true, message: 'Broadcast announcement cleared' });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }

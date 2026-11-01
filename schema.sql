@@ -87,6 +87,15 @@ CREATE TABLE deposit_requests (
     reviewed_at TIMESTAMP WITH TIME ZONE
 );
 
+-- 7. Announcements: Broadcast alerts sent by Admin to all apps live
+CREATE TABLE announcements (
+    id SERIAL PRIMARY KEY,
+    message TEXT NOT NULL,
+    type VARCHAR(20) DEFAULT 'info',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indices for performance and real-time concurrency lookups
 CREATE INDEX idx_auctions_status_ends_at ON auctions(status, ends_at);
 CREATE INDEX idx_auctions_showroom_id ON auctions(showroom_id);

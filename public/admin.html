@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ExchangeDesk — Super Admin v2.0</title>
+  <title>ExchangeDesk — Super Admin Control Hub v3.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -12,19 +12,19 @@
     }
   </script>
   <style>
-    body { background: #060c18; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background: #060c18; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: #f1f5f9; }
     .card { background: #0d1526; border: 1px solid #1e2d4a; border-radius: 14px; }
     .sidebar-link { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; font-size:13px; font-weight:600; color:#94a3b8; cursor:pointer; transition:all .15s; margin-bottom:2px; }
     .sidebar-link:hover { background:#13203a; color:#e2e8f0; }
     .sidebar-link.active { background:#1a2e50; color:#fff; border-left:3px solid #7c3aed; padding-left:11px; }
     .badge-live { background:#064e3b; color:#34d399; border:1px solid #065f46; }
     .badge-closed { background:#1e293b; color:#94a3b8; }
-    .badge-completed { background:#0c4a6e; color:#38bdf8; }
+    .badge-completed { background:#0c4a6e; color:#38bdf8; border:1px solid #0369a1; }
     .badge-cancelled { background:#450a0a; color:#fca5a5; }
-    .badge-pending { background:#422006; color:#fbbf24; }
+    .badge-pending { background:#422006; color:#fbbf24; border:1px solid #78350f; }
     .badge-approved { background:#064e3b; color:#34d399; }
     .badge-rejected { background:#450a0a; color:#fca5a5; }
-    .btn { padding:6px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; transition:all .15s; border:none; }
+    .btn { padding:6px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; transition:all .15s; border:none; display:inline-flex; align-items:center; gap:4px; }
     .btn:active { transform:scale(.95); }
     .btn-green { background:#065f46; color:#34d399; }
     .btn-green:hover { background:#047857; }
@@ -41,15 +41,15 @@
     .inp { width:100%; background:#0a111f; border:1px solid #1e2d4a; border-radius:8px; padding:8px 12px; color:#e2e8f0; font-size:12px; outline:none; }
     .inp:focus { border-color:#7c3aed; }
     .kpi-card { background:#0d1526; border:1px solid #1e2d4a; border-radius:12px; padding:16px; }
-    #toast-container { position:fixed; bottom:24px; right:16px; z-index:9999; display:flex; flex-direction:column; gap:8px; pointer-events:none; max-width:320px; }
-    .toast { padding:12px 16px; border-radius:10px; font-size:12px; font-weight:600; color:#fff; animation:slideIn .3s ease; pointer-events:all; box-shadow:0 4px 24px rgba(0,0,0,.5); }
+    #toast-container { position:fixed; bottom:24px; right:16px; z-index:9999; display:flex; flex-direction:column; gap:8px; pointer-events:none; max-width:340px; }
+    .toast { padding:12px 16px; border-radius:10px; font-size:12px; font-weight:600; color:#fff; animation:slideIn .3s ease; pointer-events:all; box-shadow:0 6px 24px rgba(0,0,0,.6); }
     .toast-success { background:#065f46; border:1px solid #059669; }
     .toast-error { background:#7f1d1d; border:1px solid #ef4444; }
     .toast-info { background:#1e3a5f; border:1px solid #3b82f6; }
     @keyframes slideIn { from { transform:translateX(120%); opacity:0; } to { transform:translateX(0); opacity:1; } }
     @keyframes slideOut { from { transform:translateX(0); opacity:1; } to { transform:translateX(120%); opacity:0; } }
-    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.8); backdrop-filter:blur(4px); z-index:5000; display:flex; align-items:center; justify-content:center; padding:16px; }
-    .modal-box { background:#0d1526; border:1px solid #2d3f5e; border-radius:16px; padding:24px; width:100%; max-width:420px; position:relative; }
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.85); backdrop-filter:blur(4px); z-index:5000; display:flex; align-items:center; justify-content:center; padding:16px; }
+    .modal-box { background:#0d1526; border:1px solid #2d3f5e; border-radius:16px; padding:24px; width:100%; max-width:440px; position:relative; max-height:90vh; overflow-y:auto; }
     .stat-val { font-size:22px; font-weight:900; font-variant-numeric:tabular-nums; }
     .section { display:none; }
     .section.active-section { display:block; }
@@ -58,12 +58,13 @@
     .live-dot { width:8px; height:8px; border-radius:50%; background:#34d399; display:inline-block; animation:pulse 1.5s infinite; }
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
     .countdown { font-family:monospace; font-weight:900; font-size:13px; }
-    .search-inp { background:#0a111f; border:1px solid #1e2d4a; border-radius:8px; padding:7px 12px; color:#e2e8f0; font-size:12px; outline:none; width:100%; max-width:260px; }
+    .search-inp { background:#0a111f; border:1px solid #1e2d4a; border-radius:8px; padding:7px 12px; color:#e2e8f0; font-size:12px; outline:none; width:100%; max-width:240px; }
     .search-inp:focus { border-color:#7c3aed; }
-    .tbl-row { border-bottom:1px solid #1a2640; padding:10px 12px; font-size:12px; }
+    .tbl-row { border-bottom:1px solid #1a2640; padding:12px; font-size:12px; }
     .tbl-row:last-child { border-bottom:none; }
     .tbl-row:hover { background:#0f1d35; }
-    .action-group { display:flex; gap:4px; flex-wrap:wrap; align-items:center; }
+    .action-group { display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
+    .otp-pill { font-family:monospace; font-size:13px; font-weight:900; letter-spacing:1px; background:#1e1b4b; color:#c084fc; border:1px solid #4338ca; padding:3px 8px; border-radius:6px; }
   </style>
 </head>
 <body>
@@ -76,14 +77,14 @@
     </div>
     <div>
       <h1 style="font-size:20px;font-weight:900;color:#fff">ExchangeDesk Admin</h1>
-      <p style="font-size:11px;color:#64748b;margin-top:4px">Super Admin Control Hub v2.0</p>
+      <p style="font-size:11px;color:#64748b;margin-top:4px">Super Admin Control Hub v3.0</p>
     </div>
     <form id="loginForm" style="text-align:left" onsubmit="doLogin(event)">
-      <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px">Master Password</label>
+      <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px">Master Security Key / Password</label>
       <input type="password" id="loginPwd" class="inp" placeholder="Enter admin password" value="Gulzar@1013" style="margin-bottom:12px">
       <button type="submit" style="width:100%;padding:11px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#ec4899);color:#fff;font-weight:900;font-size:13px;border:none;cursor:pointer">Unlock Admin Console →</button>
     </form>
-    <a href="/" style="font-size:10px;color:#475569">← Back to Mobile App</a>
+    <a href="/" style="font-size:10px;color:#475569">← Back to Mobile App Terminal</a>
   </div>
 </div>
 
@@ -94,15 +95,18 @@
   <div style="display:flex;min-height:100vh">
 
     <!-- SIDEBAR (desktop) -->
-    <aside id="sidebar" style="width:220px;min-width:220px;background:#080f1e;border-right:1px solid #1a2640;padding:16px 10px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto" class="hidden lg:flex flex-col">
-      <div style="padding:10px 6px 20px">
-        <div style="font-size:15px;font-weight:900;color:#fff">ExchangeDesk</div>
-        <div style="font-size:10px;color:#475569;margin-top:2px">Super Admin v2.0</div>
+    <aside id="sidebar" style="width:230px;min-width:230px;background:#080f1e;border-right:1px solid #1a2640;padding:16px 10px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto" class="hidden lg:flex flex-col">
+      <div style="padding:10px 6px 18px">
+        <div style="font-size:16px;font-weight:900;color:#fff;display:flex;align-items:center;gap:6px">
+          <span>🏍️ ExchangeDesk</span>
+        </div>
+        <div style="font-size:10px;color:#64748b;margin-top:2px">Super Admin Console v3.0</div>
       </div>
       <nav style="flex:1" id="sidebarNav">
         <div class="sidebar-link active" onclick="switchTab('dashboard')">📊 <span>Dashboard</span></div>
         <div class="sidebar-link" onclick="switchTab('approvals')">⏳ <span>Approvals</span> <span id="sidebarApprovalBadge" style="margin-left:auto;background:#d97706;color:#000;border-radius:99px;padding:1px 7px;font-size:10px;display:none">0</span></div>
         <div class="sidebar-link" onclick="switchTab('auctions')">⚡ <span>Live Auctions</span> <span id="sidebarLiveBadge" style="margin-left:auto;background:#059669;color:#000;border-radius:99px;padding:1px 7px;font-size:10px;display:none">0</span></div>
+        <div class="sidebar-link" onclick="switchTab('handovers')">🤝 <span>Handovers & OTP</span> <span id="sidebarHandoverBadge" style="margin-left:auto;background:#7c3aed;color:#fff;border-radius:99px;padding:1px 7px;font-size:10px;display:none">0</span></div>
         <div class="sidebar-link" onclick="switchTab('deposits')">💳 <span>Deposits</span></div>
         <div class="sidebar-link" onclick="switchTab('buyers')">👥 <span>Buyers</span></div>
         <div class="sidebar-link" onclick="switchTab('showrooms')">🏢 <span>Showrooms</span></div>
@@ -110,8 +114,8 @@
         <div class="sidebar-link" onclick="switchTab('settings')">⚙️ <span>Settings</span></div>
       </nav>
       <div style="border-top:1px solid #1a2640;padding-top:12px;margin-top:8px">
-        <div style="font-size:10px;color:#475569;margin-bottom:8px">Logged in as <span style="color:#a78bfa">Super Admin</span></div>
-        <button onclick="doLogout()" class="btn btn-red" style="width:100%">🚪 Logout</button>
+        <div style="font-size:10px;color:#64748b;margin-bottom:8px">Auth: <span style="color:#a78bfa;font-weight:700">Super Administrator</span></div>
+        <button onclick="doLogout()" class="btn btn-red" style="width:100%;justify-content:center">🚪 Logout Console</button>
       </div>
     </aside>
 
@@ -119,58 +123,98 @@
     <main style="flex:1;overflow-y:auto;padding:20px;max-width:100%">
 
       <!-- MOBILE HEADER -->
-      <div class="lg:hidden" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-        <div style="font-size:15px;font-weight:900;color:#fff">🔐 Admin Hub</div>
+      <div class="lg:hidden" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:15px;font-weight:900;color:#fff">🔐 Admin Console v3.0</div>
         <button onclick="doLogout()" class="btn btn-red" style="font-size:10px">Logout</button>
       </div>
 
       <!-- MOBILE NAV TABS -->
-      <div class="lg:hidden" style="display:flex;gap:4px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px" id="mobileNav">
-        <button onclick="switchTab('dashboard')" class="btn btn-purple" style="white-space:nowrap;font-size:10px">📊</button>
+      <div class="lg:hidden" style="display:flex;gap:4px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px" id="mobileNav">
+        <button onclick="switchTab('dashboard')" class="btn btn-purple" style="white-space:nowrap;font-size:10px">📊 Dash</button>
         <button onclick="switchTab('approvals')" class="btn btn-amber" style="white-space:nowrap;font-size:10px">⏳ Approvals</button>
         <button onclick="switchTab('auctions')" class="btn btn-green" style="white-space:nowrap;font-size:10px">⚡ Auctions</button>
+        <button onclick="switchTab('handovers')" class="btn btn-purple" style="white-space:nowrap;font-size:10px">🤝 Handovers</button>
         <button onclick="switchTab('deposits')" class="btn btn-blue" style="white-space:nowrap;font-size:10px">💳 Deposits</button>
         <button onclick="switchTab('buyers')" class="btn btn-slate" style="white-space:nowrap;font-size:10px">👥 Buyers</button>
         <button onclick="switchTab('showrooms')" class="btn btn-slate" style="white-space:nowrap;font-size:10px">🏢 Showrooms</button>
         <button onclick="switchTab('ledger')" class="btn btn-slate" style="white-space:nowrap;font-size:10px">💰 Ledger</button>
-        <button onclick="switchTab('settings')" class="btn btn-slate" style="white-space:nowrap;font-size:10px">⚙️</button>
+        <button onclick="switchTab('settings')" class="btn btn-slate" style="white-space:nowrap;font-size:10px">⚙️ Config</button>
       </div>
 
       <!-- PENDING ALERT BANNER -->
       <div id="pendingBanner" style="display:none;background:#422006;border:1px solid #d97706;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
         <div>
-          <div style="font-size:13px;font-weight:700;color:#fbbf24">⚠️ Pending Approvals Required</div>
+          <div style="font-size:13px;font-weight:700;color:#fbbf24">⚠️ Pending Action Items Awaiting Your Approval</div>
           <div style="font-size:11px;color:#d97706;margin-top:2px" id="pendingBannerText">Loading...</div>
         </div>
-        <button onclick="switchTab('approvals')" class="btn btn-amber">Review Now →</button>
+        <button onclick="switchTab('approvals')" class="btn btn-amber">Review & Approve Now →</button>
       </div>
 
       <!-- ═══════════════════════════════════════════════════ -->
       <!-- SECTION: DASHBOARD -->
       <!-- ═══════════════════════════════════════════════════ -->
       <section id="sec-dashboard" class="section active-section">
-        <h2 style="font-size:16px;font-weight:900;color:#fff;margin-bottom:16px">📊 Dashboard</h2>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          <h2 style="font-size:16px;font-weight:900;color:#fff">📊 Platform Overview & KPIs</h2>
+          <div style="display:flex;gap:8px">
+            <button onclick="loadStats(); loadActivity();" class="btn btn-slate">↻ Refresh</button>
+          </div>
+        </div>
 
         <!-- KPI GRID -->
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px" id="kpiGrid">
-          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Fee Revenue</div><div class="stat-val" style="color:#34d399" id="kRevenue">₹0</div><div style="font-size:10px;color:#475569">₹500 / handover</div></div>
-          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Total GMV</div><div class="stat-val" style="color:#e2e8f0" id="kGmv">₹0</div><div style="font-size:10px;color:#475569">Settled deals</div></div>
-          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Live Auctions</div><div class="stat-val" style="color:#38bdf8" id="kLive">0</div><div style="font-size:10px;color:#475569" id="kTotalAuctions">0 total</div></div>
-          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Buyers</div><div class="stat-val" style="color:#c084fc" id="kBuyers">0</div><div style="font-size:10px;color:#475569" id="kVerifiedBuyers">0 verified</div></div>
-          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Showrooms</div><div class="stat-val" style="color:#fb923c" id="kShowrooms">0</div><div style="font-size:10px;color:#475569">Active desks</div></div>
-          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">System Liquidity</div><div class="stat-val" style="color:#a78bfa" id="kLiquidity">₹0</div><div style="font-size:10px;color:#475569">In buyer wallets</div></div>
-          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Total Bids</div><div class="stat-val" style="color:#f472b6" id="kBids">0</div><div style="font-size:10px;color:#475569">All time</div></div>
-          <div class="kpi-card" style="border-color:#d97706" onclick="switchTab('approvals')" id="kPendingCard"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Pending</div><div class="stat-val" style="color:#fbbf24" id="kPending">0</div><div style="font-size:10px;color:#d97706">Click to review</div></div>
+          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">Fee Revenue</div><div class="stat-val" style="color:#34d399" id="kRevenue">₹0</div><div style="font-size:10px;color:#475569">₹500 / handover</div></div>
+          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">Total GMV</div><div class="stat-val" style="color:#e2e8f0" id="kGmv">₹0</div><div style="font-size:10px;color:#475569">Settled deals</div></div>
+          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">Live Auctions</div><div class="stat-val" style="color:#38bdf8" id="kLive">0</div><div style="font-size:10px;color:#475569" id="kTotalAuctions">0 total</div></div>
+          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">Buyers</div><div class="stat-val" style="color:#c084fc" id="kBuyers">0</div><div style="font-size:10px;color:#475569" id="kVerifiedBuyers">0 verified</div></div>
+          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">Showrooms</div><div class="stat-val" style="color:#fb923c" id="kShowrooms">0</div><div style="font-size:10px;color:#475569">Active branches</div></div>
+          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">System Liquidity</div><div class="stat-val" style="color:#a78bfa" id="kLiquidity">₹0</div><div style="font-size:10px;color:#475569">In buyer wallets</div></div>
+          <div class="kpi-card"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">Total Bids</div><div class="stat-val" style="color:#f472b6" id="kBids">0</div><div style="font-size:10px;color:#475569">All time placed</div></div>
+          <div class="kpi-card" style="border-color:#d97706;cursor:pointer" onclick="switchTab('approvals')" id="kPendingCard"><div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">Pending Action</div><div class="stat-val" style="color:#fbbf24" id="kPending">0</div><div style="font-size:10px;color:#d97706">Click to review</div></div>
         </div>
 
-        <!-- RECENT BIDS FEED -->
-        <div class="card" style="padding:16px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <div style="font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px"><span class="live-dot"></span> Live Bids Feed</div>
-            <button onclick="loadActivity()" class="btn btn-slate">↻ Refresh</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" class="lg:grid-cols-2">
+          <!-- BROADCAST ANNOUNCEMENT CARD -->
+          <div class="card" style="padding:18px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div style="font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;gap:6px">
+                <span>📢 Live Push Announcement to Apps</span>
+              </div>
+              <span id="annStatusBadge" style="font-size:10px;padding:2px 8px;border-radius:99px;background:#1e293b;color:#94a3b8">None Active</span>
+            </div>
+            <div style="font-size:11px;color:#64748b;margin-bottom:12px">Broadcast a live alert banner to all buyers and showrooms across mobile & web instantly.</div>
+            <form onsubmit="submitAnnouncement(event)" style="display:grid;gap:10px">
+              <div>
+                <textarea id="annMessage" class="inp" rows="2" placeholder="e.g. 🚨 Mega Exchange: 15 Royal Enfield bikes going live today at 4 PM! Keep wallets funded." required style="resize:none"></textarea>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+                <div style="display:flex;gap:6px;align-items:center">
+                  <label style="font-size:11px;color:#94a3b8;font-weight:600">Type:</label>
+                  <select id="annType" class="inp" style="width:auto;padding:4px 8px">
+                    <option value="info">ℹ️ Info (Blue)</option>
+                    <option value="offer">🎁 Offer / Special (Green)</option>
+                    <option value="warning">⚠️ Warning / Alert (Amber)</option>
+                  </select>
+                </div>
+                <div style="display:flex;gap:6px">
+                  <button type="submit" class="btn btn-purple">📢 Broadcast Live</button>
+                  <button type="button" onclick="clearAnnouncement()" class="btn btn-red">Clear</button>
+                </div>
+              </div>
+            </form>
           </div>
-          <div id="activityFeed" style="max-height:320px;overflow-y:auto">
-            <div style="text-align:center;color:#475569;padding:32px;font-size:12px">Loading bids...</div>
+
+          <!-- RECENT BIDS FEED -->
+          <div class="card" style="padding:18px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div style="font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px">
+                <span class="live-dot"></span> Live Bidding Radar
+              </div>
+              <button onclick="loadActivity()" class="btn btn-slate">↻ Refresh</button>
+            </div>
+            <div id="activityFeed" style="max-height:220px;overflow-y:auto">
+              <div style="text-align:center;color:#475569;padding:32px;font-size:12px">Loading bids...</div>
+            </div>
           </div>
         </div>
       </section>
@@ -180,27 +224,27 @@
       <!-- ═══════════════════════════════════════════════════ -->
       <section id="sec-approvals" class="section">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-          <h2 style="font-size:16px;font-weight:900;color:#fff">⏳ Pending Approvals</h2>
+          <h2 style="font-size:16px;font-weight:900;color:#fff">⏳ Registrations & Deposits Approval Gate</h2>
           <button onclick="loadApprovals()" class="btn btn-slate">↻ Refresh</button>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px" class="lg:grid-cols-2">
           <!-- Pending Showrooms -->
           <div class="card" style="padding:16px">
-            <div style="font-size:12px;font-weight:700;color:#7dd3fc;margin-bottom:10px">🏢 Pending Showrooms <span id="cntPendingShowrooms" style="color:#64748b">(0)</span></div>
+            <div style="font-size:12px;font-weight:700;color:#7dd3fc;margin-bottom:10px">🏢 Pending Showroom Counters <span id="cntPendingShowrooms" style="color:#64748b">(0)</span></div>
             <div id="listPendingShowrooms"><div style="text-align:center;color:#475569;padding:24px;font-size:12px">No pending showrooms</div></div>
           </div>
           <!-- Pending Buyers -->
           <div class="card" style="padding:16px">
-            <div style="font-size:12px;font-weight:700;color:#34d399;margin-bottom:10px">👥 Pending Buyers <span id="cntPendingBuyers" style="color:#64748b">(0)</span></div>
+            <div style="font-size:12px;font-weight:700;color:#34d399;margin-bottom:10px">👥 Pending Used-Bike Buyers <span id="cntPendingBuyers" style="color:#64748b">(0)</span></div>
             <div id="listPendingBuyers"><div style="text-align:center;color:#475569;padding:24px;font-size:12px">No pending buyers</div></div>
           </div>
         </div>
 
         <!-- Pending Deposits -->
         <div class="card" style="padding:16px">
-          <div style="font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:10px">💳 Pending Wallet Deposits <span id="cntPendingDeposits" style="color:#64748b">(0)</span></div>
-          <div style="font-size:11px;color:#64748b;margin-bottom:10px">Verify UTR/UPI reference, then approve to instantly credit buyer wallet.</div>
+          <div style="font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:10px">💳 Pending Buyer Wallet Deposits <span id="cntPendingDeposits" style="color:#64748b">(0)</span></div>
+          <div style="font-size:11px;color:#64748b;margin-bottom:10px">Check dealer bank UTR / payment screenshot, then click Approve to credit wallet instantly.</div>
           <div id="listPendingDeposits"><div style="text-align:center;color:#475569;padding:24px;font-size:12px">No pending deposits</div></div>
         </div>
       </section>
@@ -210,9 +254,11 @@
       <!-- ═══════════════════════════════════════════════════ -->
       <section id="sec-auctions" class="section">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-          <h2 style="font-size:16px;font-weight:900;color:#fff">⚡ Auctions Supervisor</h2>
+          <h2 style="font-size:16px;font-weight:900;color:#fff">⚡ Auctions Control & Live Supervisor</h2>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <select id="auctionFilter" onchange="renderAuctions()" class="inp" style="width:auto;min-width:140px">
+            <button onclick="openCreateAuctionModal()" class="btn btn-green">➕ New Auction (Admin)</button>
+            <button onclick="exportAuctionsCsv()" class="btn btn-blue">📥 Export CSV</button>
+            <select id="auctionFilter" onchange="renderAuctions()" class="inp" style="width:auto;min-width:130px">
               <option value="ALL">All Statuses</option>
               <option value="LIVE" selected>🟢 LIVE Only</option>
               <option value="CLOSED">CLOSED</option>
@@ -226,19 +272,43 @@
       </section>
 
       <!-- ═══════════════════════════════════════════════════ -->
+      <!-- SECTION: HANDOVERS & OTP -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <section id="sec-handovers" class="section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          <div>
+            <h2 style="font-size:16px;font-weight:900;color:#fff">🤝 Vehicle Deliveries, OTPs & Handover Override</h2>
+            <p style="font-size:11px;color:#64748b;margin-top:2px">Track winning deals, view secret Pickup OTPs, force handover or penalize defaulting buyers.</p>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input class="search-inp" placeholder="Search vehicle / winner / RC..." oninput="filterHandovers(this.value)" id="handoverSearch">
+            <select id="handoverStatusFilter" onchange="filterHandovers(document.getElementById('handoverSearch').value)" class="inp" style="width:auto;min-width:120px">
+              <option value="ALL">All Deals</option>
+              <option value="CLOSED" selected>⏳ Pending Pickup (CLOSED)</option>
+              <option value="COMPLETED">✅ Completed (Delivered)</option>
+            </select>
+            <button onclick="exportHandoversCsv()" class="btn btn-blue">📥 Export CSV</button>
+            <button onclick="loadHandovers()" class="btn btn-slate">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="handoversList"><div style="text-align:center;color:#475569;padding:48px;font-size:12px">Loading handover deals...</div></div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════ -->
       <!-- SECTION: DEPOSITS -->
       <!-- ═══════════════════════════════════════════════════ -->
       <section id="sec-deposits" class="section">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-          <h2 style="font-size:16px;font-weight:900;color:#fff">💳 Deposit History</h2>
+          <h2 style="font-size:16px;font-weight:900;color:#fff">💳 Wallet Deposits History</h2>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <input class="search-inp" placeholder="Search by name or UTR..." oninput="filterDeposits(this.value)" id="depositSearch">
-            <select id="depositStatusFilter" onchange="filterDeposits(document.getElementById('depositSearch').value)" class="inp" style="width:auto;min-width:120px">
+            <input class="search-inp" placeholder="Search name or UTR..." oninput="filterDeposits(this.value)" id="depositSearch">
+            <select id="depositStatusFilter" onchange="filterDeposits(document.getElementById('depositSearch').value)" class="inp" style="width:auto;min-width:110px">
               <option value="ALL">All Status</option>
               <option value="PENDING">PENDING</option>
               <option value="APPROVED">APPROVED</option>
               <option value="REJECTED">REJECTED</option>
             </select>
+            <button onclick="exportDepositsCsv()" class="btn btn-blue">📥 Export CSV</button>
             <button onclick="loadDepositHistory()" class="btn btn-slate">↻ Refresh</button>
           </div>
         </div>
@@ -252,10 +322,11 @@
       <!-- ═══════════════════════════════════════════════════ -->
       <section id="sec-buyers" class="section">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-          <h2 style="font-size:16px;font-weight:900;color:#fff">👥 Buyers Management</h2>
+          <h2 style="font-size:16px;font-weight:900;color:#fff">👥 Buyers & Wallet Authority</h2>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <input class="search-inp" placeholder="Search name / phone..." oninput="filterBuyers(this.value)" id="buyerSearch">
             <button onclick="openCreateBuyerModal()" class="btn btn-green">➕ New Buyer</button>
+            <button onclick="exportBuyersCsv()" class="btn btn-blue">📥 Export CSV</button>
             <button onclick="loadBuyers()" class="btn btn-slate">↻ Refresh</button>
           </div>
         </div>
@@ -269,7 +340,7 @@
       <!-- ═══════════════════════════════════════════════════ -->
       <section id="sec-showrooms" class="section">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-          <h2 style="font-size:16px;font-weight:900;color:#fff">🏢 Showrooms Management</h2>
+          <h2 style="font-size:16px;font-weight:900;color:#fff">🏢 Showroom Deal Desks</h2>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <input class="search-inp" placeholder="Search name / phone..." oninput="filterShowrooms(this.value)" id="showroomSearch">
             <button onclick="openCreateShowroomModal()" class="btn btn-green">➕ New Showroom</button>
@@ -286,8 +357,11 @@
       <!-- ═══════════════════════════════════════════════════ -->
       <section id="sec-ledger" class="section">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-          <h2 style="font-size:16px;font-weight:900;color:#fff">💰 Platform Fee Ledger</h2>
-          <button onclick="loadLedger()" class="btn btn-slate">↻ Refresh</button>
+          <h2 style="font-size:16px;font-weight:900;color:#fff">💰 Platform Fee Ledger & Audit Log</h2>
+          <div style="display:flex;gap:8px">
+            <button onclick="exportLedgerCsv()" class="btn btn-blue">📥 Export CSV</button>
+            <button onclick="loadLedger()" class="btn btn-slate">↻ Refresh</button>
+          </div>
         </div>
         <div class="card" style="padding:0;overflow:hidden">
           <div id="ledgerList" style="max-height:600px;overflow-y:auto"><div style="text-align:center;color:#475569;padding:48px;font-size:12px">Loading transactions...</div></div>
@@ -298,9 +372,9 @@
       <!-- SECTION: SETTINGS -->
       <!-- ═══════════════════════════════════════════════════ -->
       <section id="sec-settings" class="section">
-        <h2 style="font-size:16px;font-weight:900;color:#fff;margin-bottom:16px">⚙️ Platform Settings</h2>
-        <div class="card" style="padding:20px;max-width:500px">
-          <div style="font-size:11px;color:#64748b;margin-bottom:16px">Changes apply live across all buyer and showroom nodes immediately.</div>
+        <h2 style="font-size:16px;font-weight:900;color:#fff;margin-bottom:16px">⚙️ Platform Business Rules & Engine Tuning</h2>
+        <div class="card" style="padding:22px;max-width:540px">
+          <div style="font-size:11px;color:#64748b;margin-bottom:16px">Live configuration parameters applied immediately across all buyer and showroom nodes without restart.</div>
           <form onsubmit="saveSettings(event)" style="display:grid;gap:14px">
             <div>
               <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Minimum Wallet Balance to Bid (₹)</label>
@@ -318,7 +392,7 @@
               <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Default Auction Duration (Minutes)</label>
               <input type="number" id="cfgAuctionDuration" class="inp" min="1" max="120">
             </div>
-            <button type="submit" class="btn btn-purple" style="padding:10px 20px;font-size:12px;border-radius:10px">💾 Save Platform Settings</button>
+            <button type="submit" class="btn btn-purple" style="padding:10px 20px;font-size:12px;border-radius:10px;justify-content:center">💾 Save Platform Rules Dynamically</button>
           </form>
         </div>
       </section>
@@ -330,6 +404,126 @@
 <!-- ═══════════════════════════════════════════ -->
 <!-- MODALS -->
 <!-- ═══════════════════════════════════════════ -->
+
+<!-- Admin Create Auction Modal -->
+<div id="modalCreateAuction" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="max-width:520px">
+    <button onclick="closeModal('modalCreateAuction')" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:22px;cursor:pointer">×</button>
+    <h3 style="font-size:15px;font-weight:900;color:#fff;margin-bottom:12px">➕ Post Live Auction (Admin Direct)</h3>
+    <form onsubmit="submitCreateAuction(event)" style="display:grid;gap:11px">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">Select Showroom *</label>
+        <select id="caShowroomSelect" class="inp" required></select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">Vehicle Model *</label>
+          <input type="text" id="caModel" class="inp" placeholder="e.g. Pulsar 150 Twin Disc" required>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">RC Number *</label>
+          <input type="text" id="caRc" class="inp" placeholder="e.g. DL01AB1234" required>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">Base Price (₹) *</label>
+          <input type="number" id="caPrice" class="inp" placeholder="35000" step="500" min="1000" required>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">Year</label>
+          <input type="number" id="caYear" class="inp" value="2022" min="1990" max="2030">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">KM Driven</label>
+          <input type="number" id="caKm" class="inp" value="18000" min="0">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">Duration (Minutes)</label>
+          <input type="number" id="caDuration" class="inp" value="10" min="1" max="60">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">Engine Sound / Video URL</label>
+          <input type="text" id="caVideo" class="inp" placeholder="Optional URL">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">Bike Image URL(s) (Comma-separated)</label>
+        <input type="text" id="caPhotos" class="inp" placeholder="https://...jpg, https://...jpg">
+      </div>
+      <button type="submit" class="btn btn-green" style="padding:10px;font-size:12px;border-radius:10px;width:100%;justify-content:center">🚀 Publish & Start Live Auction Now</button>
+    </form>
+  </div>
+</div>
+
+<!-- Admin Edit Auction Modal -->
+<div id="modalEditAuction" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button onclick="closeModal('modalEditAuction')" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:22px;cursor:pointer">×</button>
+    <h3 style="font-size:15px;font-weight:900;color:#fff;margin-bottom:12px">✏️ Edit Auction Details</h3>
+    <form onsubmit="submitEditAuction(event)" style="display:grid;gap:10px">
+      <input type="hidden" id="eaId">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">Vehicle Model</label>
+        <input type="text" id="eaModel" class="inp" required>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">Base Price (₹)</label>
+          <input type="number" id="eaPrice" class="inp" step="500">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">RC Number</label>
+          <input type="text" id="eaRc" class="inp">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">Year</label>
+          <input type="number" id="eaYear" class="inp">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">KM Driven</label>
+          <input type="number" id="eaKm" class="inp">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">Status Override</label>
+        <select id="eaStatus" class="inp">
+          <option value="LIVE">LIVE</option>
+          <option value="CLOSED">CLOSED</option>
+          <option value="COMPLETED">COMPLETED</option>
+          <option value="CANCELLED">CANCELLED</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-purple" style="padding:10px;font-size:12px;border-radius:10px;width:100%;justify-content:center">💾 Save Changes</button>
+    </form>
+  </div>
+</div>
+
+<!-- Defaulter Penalty Modal -->
+<div id="modalDefaultPenalty" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="max-width:390px">
+    <button onclick="closeModal('modalDefaultPenalty')" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:22px;cursor:pointer">×</button>
+    <h3 style="font-size:14px;font-weight:900;color:#f87171;margin-bottom:8px">🚨 Mark Defaulter & Penalty</h3>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:12px" id="dpSubtitle"></div>
+    <form onsubmit="submitDefaultPenalty(event)" style="display:grid;gap:10px">
+      <input type="hidden" id="dpAuctionId">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">Penalty Amount to Deduct from Wallet (₹)</label>
+        <input type="number" id="dpAmount" class="inp" value="1000" min="100" step="100" required>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px">Default Reason</label>
+        <input type="text" id="dpReason" class="inp" value="Buyer refused to collect vehicle" required>
+      </div>
+      <div style="font-size:10px;color:#f87171">Note: This will deduct the penalty from buyer wallet and cancel the auction deal for relisting.</div>
+      <button type="submit" class="btn btn-red" style="padding:10px;font-size:12px;border-radius:10px;width:100%;justify-content:center">🚨 Deduct Penalty & Cancel Deal</button>
+    </form>
+  </div>
+</div>
 
 <!-- Wallet Adjust Modal -->
 <div id="modalWallet" class="modal-overlay" style="display:none">
@@ -353,7 +547,7 @@
         <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Amount (₹)</label>
         <input type="number" id="wlAmount" class="inp" min="100" step="500" value="5000" required>
       </div>
-      <button type="submit" class="btn btn-purple" style="padding:10px;font-size:12px;border-radius:10px;width:100%">Execute Wallet Adjustment</button>
+      <button type="submit" class="btn btn-purple" style="padding:10px;font-size:12px;border-radius:10px;width:100%;justify-content:center">Execute Wallet Adjustment</button>
     </form>
   </div>
 </div>
@@ -381,7 +575,7 @@
         <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">New PIN (min 4 digits)</label>
         <input type="text" id="pinNewValue" class="inp" placeholder="e.g. 1234" maxlength="8" required>
       </div>
-      <button type="submit" class="btn btn-purple" style="padding:10px;font-size:12px;border-radius:10px;width:100%">🔑 Save New PIN</button>
+      <button type="submit" class="btn btn-purple" style="padding:10px;font-size:12px;border-radius:10px;width:100%;justify-content:center">🔑 Save New PIN</button>
     </form>
   </div>
 </div>
@@ -408,7 +602,7 @@
         <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Initial Wallet Balance (₹)</label>
         <input type="number" id="cbBalance" class="inp" value="0" min="0" step="500">
       </div>
-      <button type="submit" class="btn btn-green" style="padding:10px;font-size:12px;border-radius:10px;width:100%">✅ Create & Approve Buyer</button>
+      <button type="submit" class="btn btn-green" style="padding:10px;font-size:12px;border-radius:10px;width:100%;justify-content:center">✅ Create & Approve Buyer</button>
     </form>
   </div>
 </div>
@@ -432,10 +626,10 @@
         <input type="text" id="csAddress" class="inp" placeholder="e.g. Sector 12, Gurugram" required>
       </div>
       <div>
-        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Default PIN (min 4 digits)</label>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Default PIN</label>
         <input type="text" id="csPin" class="inp" placeholder="1234" value="1234" maxlength="8">
       </div>
-      <button type="submit" class="btn btn-green" style="padding:10px;font-size:12px;border-radius:10px;width:100%">✅ Create & Activate Showroom</button>
+      <button type="submit" class="btn btn-green" style="padding:10px;font-size:12px;border-radius:10px;width:100%;justify-content:center">✅ Create & Activate Showroom</button>
     </form>
   </div>
 </div>
@@ -449,9 +643,9 @@
       <input type="hidden" id="rejectDepositId">
       <div>
         <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px">Rejection Reason</label>
-        <input type="text" id="rejectDepositNote" class="inp" value="Payment verification failed" required>
+        <input type="text" id="rejectDepositNote" class="inp" value="Payment verification failed / UTR mismatch" required>
       </div>
-      <button type="submit" class="btn btn-red" style="padding:10px;font-size:12px;border-radius:10px;width:100%">❌ Confirm Reject</button>
+      <button type="submit" class="btn btn-red" style="padding:10px;font-size:12px;border-radius:10px;width:100%;justify-content:center">❌ Confirm Reject</button>
     </form>
   </div>
 </div>
@@ -463,9 +657,9 @@
     <h3 style="font-size:14px;font-weight:900;color:#fff;margin-bottom:12px">⏱️ Extend Auction</h3>
     <div id="extendAuctionName" style="font-size:11px;color:#94a3b8;margin-bottom:16px"></div>
     <div style="display:grid;gap:8px">
-      <button onclick="submitExtend(5)" class="btn btn-amber" style="padding:12px;font-size:13px;border-radius:10px">+5 Minutes</button>
-      <button onclick="submitExtend(10)" class="btn btn-amber" style="padding:12px;font-size:13px;border-radius:10px">+10 Minutes</button>
-      <button onclick="submitExtend(15)" class="btn btn-amber" style="padding:12px;font-size:13px;border-radius:10px">+15 Minutes</button>
+      <button onclick="submitExtend(5)" class="btn btn-amber" style="padding:12px;font-size:13px;border-radius:10px;justify-content:center">+5 Minutes</button>
+      <button onclick="submitExtend(10)" class="btn btn-amber" style="padding:12px;font-size:13px;border-radius:10px;justify-content:center">+10 Minutes</button>
+      <button onclick="submitExtend(15)" class="btn btn-amber" style="padding:12px;font-size:13px;border-radius:10px;justify-content:center">+15 Minutes</button>
     </div>
     <input type="hidden" id="extendAuctionId">
   </div>
@@ -478,7 +672,7 @@
 // ═══════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════
-let allBuyers = [], allShowrooms = [], allDeposits = [], allAuctions = [], allLedger = [];
+let allBuyers = [], allShowrooms = [], allDeposits = [], allAuctions = [], allLedger = [], allHandovers = [];
 let autoRefreshInterval = null;
 let timerInterval = null;
 
@@ -529,6 +723,7 @@ function checkAuth() {
 async function initApp() {
   await loadStats();
   await loadActivity();
+  await loadAnnouncement();
   startAutoRefresh();
   startTimerLoop();
 }
@@ -541,6 +736,7 @@ function startAutoRefresh() {
     if (tab === 'dashboard') await loadActivity();
     if (tab === 'approvals') await loadApprovals();
     if (tab === 'auctions') await loadAuctions();
+    if (tab === 'handovers') await loadHandovers();
   }, 5000);
 }
 
@@ -558,12 +754,13 @@ function switchTab(tab) {
   const sec = document.getElementById('sec-' + tab);
   if (sec) sec.classList.add('active-section');
   const links = document.querySelectorAll('#sidebarNav .sidebar-link');
-  const tabOrder = ['dashboard','approvals','auctions','deposits','buyers','showrooms','ledger','settings'];
+  const tabOrder = ['dashboard','approvals','auctions','handovers','deposits','buyers','showrooms','ledger','settings'];
   const idx = tabOrder.indexOf(tab);
   if (links[idx]) links[idx].classList.add('active');
 
   if (tab === 'approvals') loadApprovals();
   else if (tab === 'auctions') loadAuctions();
+  else if (tab === 'handovers') loadHandovers();
   else if (tab === 'deposits') loadDepositHistory();
   else if (tab === 'buyers') loadBuyers();
   else if (tab === 'showrooms') loadShowrooms();
@@ -608,9 +805,105 @@ function toast(msg, type='info') {
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+async function confirmAction(msg) { return window.confirm(msg); }
 
-async function confirmAction(msg) {
-  return window.confirm(msg);
+// ═══════════════════════════════════════════════════════
+// EXPORT TO CSV ENGINE
+// ═══════════════════════════════════════════════════════
+function exportToCsv(filename, headers, rows) {
+  if (!rows || !rows.length) { toast('No data to export', 'error'); return; }
+  const csvContent = '\uFEFF' + [
+    headers.map(h => `"${h.title.replace(/"/g, '""')}"`).join(','),
+    ...rows.map(row => headers.map(h => {
+      let val = h.key ? (row[h.key] !== undefined && row[h.key] !== null ? row[h.key] : '') : (h.fn ? h.fn(row) : '');
+      val = val.toString().replace(/"/g, '""');
+      return `"${val}"`;
+    }).join(','))
+  ].join('\r\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute('download', `${filename}_${new Date().toISOString().slice(0,10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  toast(`📥 Exported ${rows.length} rows to CSV!`, 'success');
+}
+
+function exportAuctionsCsv() {
+  exportToCsv('ExchangeDesk_Auctions', [
+    { title: 'Auction ID', key: 'id' },
+    { title: 'Vehicle Model', key: 'vehicle_model' },
+    { title: 'Showroom', key: 'showroom_name' },
+    { title: 'RC Number', key: 'rc_number' },
+    { title: 'Year', key: 'manufacturing_year' },
+    { title: 'KM Driven', key: 'km_driven' },
+    { title: 'Base Price (₹)', key: 'base_price' },
+    { title: 'Current Highest Bid (₹)', key: 'current_highest_bid' },
+    { title: 'Total Bids', key: 'total_bids' },
+    { title: 'Winner / Leader', key: 'highest_bidder_name' },
+    { title: 'Status', key: 'status' },
+    { title: 'Ends At', fn: r => fmt(r.ends_at) },
+  ], allAuctions);
+}
+
+function exportHandoversCsv() {
+  exportToCsv('ExchangeDesk_Handovers', [
+    { title: 'Auction ID', key: 'id' },
+    { title: 'Vehicle Model', key: 'vehicle_model' },
+    { title: 'RC Number', key: 'rc_number' },
+    { title: 'Showroom Name', key: 'showroom_name' },
+    { title: 'Showroom Phone', key: 'showroom_phone' },
+    { title: 'Winner Buyer', key: 'winner_name' },
+    { title: 'Winner Phone', key: 'winner_phone' },
+    { title: 'Winning Deal (₹)', key: 'final_bid' },
+    { title: 'Pickup OTP', key: 'pickup_otp' },
+    { title: 'Delivery Status', key: 'status' },
+    { title: 'Deal Closed Date', fn: r => fmt(r.ends_at) },
+  ], allHandovers);
+}
+
+function exportDepositsCsv() {
+  exportToCsv('ExchangeDesk_Deposits', [
+    { title: 'Deposit ID', key: 'id' },
+    { title: 'Buyer Name', key: 'business_name' },
+    { title: 'Phone', key: 'phone' },
+    { title: 'Amount (₹)', key: 'amount' },
+    { title: 'Payment Method', key: 'payment_method' },
+    { title: 'UTR / Reference ID', key: 'reference_id' },
+    { title: 'Status', key: 'status' },
+    { title: 'Admin Notes', key: 'admin_notes' },
+    { title: 'Requested Date', fn: r => fmt(r.created_at) },
+  ], allDeposits);
+}
+
+function exportBuyersCsv() {
+  exportToCsv('ExchangeDesk_Buyers', [
+    { title: 'Buyer ID', key: 'id' },
+    { title: 'Business Name', key: 'business_name' },
+    { title: 'Phone', key: 'phone' },
+    { title: 'Wallet Balance (₹)', key: 'wallet_balance' },
+    { title: 'Verified', fn: r => r.is_verified ? 'YES' : 'NO' },
+    { title: 'Active Status', fn: r => r.is_active ? 'ACTIVE' : 'BLOCKED' },
+    { title: 'Total Bids Placed', key: 'total_bids_placed' },
+    { title: 'Auctions Won', key: 'total_auctions_won' },
+    { title: 'Joined Date', fn: r => fmt(r.created_at) },
+  ], allBuyers);
+}
+
+function exportLedgerCsv() {
+  exportToCsv('ExchangeDesk_FeeLedger', [
+    { title: 'Transaction ID', key: 'id' },
+    { title: 'Auction ID', key: 'auction_id' },
+    { title: 'Vehicle Model', key: 'vehicle_model' },
+    { title: 'Showroom', key: 'showroom_name' },
+    { title: 'Winner Buyer', key: 'buyer_name' },
+    { title: 'Winning Bid (₹)', key: 'final_bid' },
+    { title: 'Platform Fee (₹)', key: 'amount' },
+    { title: 'Fee Type', key: 'fee_type' },
+    { title: 'Date', fn: r => fmt(r.created_at) },
+  ], allLedger);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -676,6 +969,48 @@ async function loadActivity() {
 }
 
 // ═══════════════════════════════════════════════════════
+// ANNOUNCEMENTS
+// ═══════════════════════════════════════════════════════
+async function loadAnnouncement() {
+  try {
+    const d = await apiFetch('/api/admin/announcement');
+    const badge = document.getElementById('annStatusBadge');
+    if (d.announcement && d.announcement.is_active) {
+      badge.textContent = '🟢 Broadcast Active';
+      badge.style.background = '#065f46';
+      badge.style.color = '#34d399';
+      document.getElementById('annMessage').value = d.announcement.message;
+      document.getElementById('annType').value = d.announcement.type || 'info';
+    } else {
+      badge.textContent = 'None Active';
+      badge.style.background = '#1e293b';
+      badge.style.color = '#94a3b8';
+    }
+  } catch(e) {}
+}
+
+async function submitAnnouncement(e) {
+  e.preventDefault();
+  const message = document.getElementById('annMessage').value.trim();
+  const type = document.getElementById('annType').value;
+  const d = await apiFetch('/api/admin/announcement', { method: 'POST', body: JSON.stringify({ message, type }) });
+  if (d.success) {
+    toast('📢 Announcement broadcasted live to all users!', 'success');
+    loadAnnouncement();
+  } else toast(d.error, 'error');
+}
+
+async function clearAnnouncement() {
+  if (!await confirmAction('Clear live broadcast announcement from all mobile apps?')) return;
+  const d = await apiFetch('/api/admin/announcement', { method: 'DELETE' });
+  if (d.success) {
+    document.getElementById('annMessage').value = '';
+    toast('Announcement cleared', 'info');
+    loadAnnouncement();
+  } else toast(d.error, 'error');
+}
+
+// ═══════════════════════════════════════════════════════
 // APPROVALS
 // ═══════════════════════════════════════════════════════
 async function loadApprovals() {
@@ -683,7 +1018,7 @@ async function loadApprovals() {
     const d = await apiFetch('/api/admin/pending');
     if (!d.success) return;
 
-    // Pending Showrooms
+    // Showrooms
     document.getElementById('cntPendingShowrooms').textContent = `(${d.pendingShowrooms.length})`;
     document.getElementById('listPendingShowrooms').innerHTML = d.pendingShowrooms.length ? d.pendingShowrooms.map(s => `
       <div style="background:#0a111f;border:1px solid #1a2640;border-radius:8px;padding:10px;margin-bottom:8px;font-size:11px">
@@ -696,7 +1031,7 @@ async function loadApprovals() {
         </div>
       </div>`).join('') : '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">✅ No pending showrooms</div>';
 
-    // Pending Buyers
+    // Buyers
     document.getElementById('cntPendingBuyers').textContent = `(${d.pendingBuyers.length})`;
     document.getElementById('listPendingBuyers').innerHTML = d.pendingBuyers.length ? d.pendingBuyers.map(b => `
       <div style="background:#0a111f;border:1px solid #1a2640;border-radius:8px;padding:10px;margin-bottom:8px;font-size:11px">
@@ -708,7 +1043,7 @@ async function loadApprovals() {
         </div>
       </div>`).join('') : '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">✅ No pending buyers</div>';
 
-    // Pending Deposits
+    // Deposits
     document.getElementById('cntPendingDeposits').textContent = `(${d.pendingDeposits.length})`;
     document.getElementById('listPendingDeposits').innerHTML = d.pendingDeposits.length ? d.pendingDeposits.map(dep => `
       <div style="background:#0a111f;border:1px solid #1a2640;border-radius:8px;padding:12px;margin-bottom:8px;font-size:11px">
@@ -728,7 +1063,7 @@ async function loadApprovals() {
           <button onclick="openRejectDeposit(${dep.id})" class="btn btn-red">❌ Reject</button>
         </div>
       </div>`).join('') : '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">✅ No pending deposits</div>';
-  } catch(e) { console.error(e); }
+  } catch(e) {}
 }
 
 async function approveEntity(type, id, name, btn) {
@@ -798,25 +1133,28 @@ function renderAuctions() {
   if (!list.length) { el.innerHTML = '<div style="text-align:center;color:#475569;padding:48px;font-size:12px">No auctions found</div>'; return; }
   el.innerHTML = list.map(a => {
     const endsAtMs = a.ends_at ? new Date(a.ends_at).getTime() : 0;
+    const rcUrl = `https://vahan.parivahan.gov.in/nrservices/`;
     return `
     <div style="background:#0a111f;border:1px solid #1a2640;border-radius:10px;padding:14px;margin-bottom:10px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div style="flex:1;min-width:200px">
+        <div style="flex:1;min-width:220px">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <span style="font-size:13px;font-weight:900;color:#fff">#${a.id} — ${a.vehicle_model}</span>
             ${badgeHtml(a.status)}
+            <a href="${rcUrl}" target="_blank" class="btn btn-slate" style="padding:2px 6px;font-size:10px" title="Check RC on Parivahan">🔍 ${a.rc_number||'RC'}</a>
           </div>
-          <div style="font-size:11px;color:#64748b;margin-top:4px">🏢 ${a.showroom_name} | ${a.make||''} ${a.manufacturing_year||''} | ${(a.km_driven||0).toLocaleString()} KM</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">🏢 ${a.showroom_name} | ${a.manufacturing_year||'2022'} | ${(a.km_driven||0).toLocaleString()} KM</div>
           <div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap">
             <div style="font-size:11px"><span style="color:#64748b">Base: </span><span style="color:#94a3b8;font-weight:700">${inr(a.base_price)}</span></div>
             <div style="font-size:11px"><span style="color:#64748b">Current: </span><span style="color:#34d399;font-weight:900">${inr(a.current_highest_bid)}</span></div>
             <div style="font-size:11px"><span style="color:#64748b">Bids: </span><span style="color:#a78bfa;font-weight:700">${a.total_bids}</span></div>
           </div>
-          ${a.highest_bidder_name ? `<div style="font-size:11px;color:#64748b;margin-top:2px">🏆 Leader: <span style="color:#fbbf24;font-weight:600">${a.highest_bidder_name}</span></div>` : ''}
+          ${a.highest_bidder_name ? `<div style="font-size:11px;color:#64748b;margin-top:3px">🏆 Leader/Winner: <span style="color:#fbbf24;font-weight:600">${a.highest_bidder_name}</span> (${a.bidder_phone||'--'})</div>` : ''}
           ${a.status === 'LIVE' ? `<div style="margin-top:6px;display:flex;align-items:center;gap:6px"><span class="live-dot"></span><span style="font-size:11px;color:#64748b">Ends in: </span><span class="countdown" data-ends-at="${endsAtMs}">--:--</span></div>` : `<div style="font-size:11px;color:#64748b;margin-top:4px">📅 ${fmt(a.ends_at)}</div>`}
         </div>
         <div class="action-group" style="flex-shrink:0">
           <button onclick="showBids(${a.id},'${a.vehicle_model.replace(/'/g,"\\'")}',${JSON.stringify(a.recent_bids||[]).replace(/"/g,'&quot;')})" class="btn btn-blue">📋 Bids</button>
+          <button onclick="openEditAuctionModal(${a.id})" class="btn btn-slate">✏️ Edit</button>
           ${a.status === 'LIVE' ? `
           <button onclick="openExtendModal(${a.id},'${a.vehicle_model.replace(/'/g,"\\'")}') " class="btn btn-amber">⏱️ Extend</button>
           <button onclick="forceClose(${a.id},'${a.vehicle_model.replace(/'/g,"\\'")}',this)" class="btn btn-slate">🔒 Close</button>
@@ -873,6 +1211,159 @@ async function cancelAuction(id, name, btn) {
   const d = await apiFetch(`/api/admin/auctions/${id}/cancel`, { method:'POST', body: JSON.stringify({ reason: reason||'Cancelled by Admin' }) });
   if (d.success) { toast(d.message, 'success'); loadAuctions(); loadStats(); }
   else { toast(d.error,'error'); btn.disabled=false; btn.textContent='❌ Cancel'; }
+}
+
+// ═══════════════════════════════════════════════════════
+// CREATE & EDIT AUCTION (ADMIN)
+// ═══════════════════════════════════════════════════════
+async function openCreateAuctionModal() {
+  if (!allShowrooms.length) await loadShowrooms();
+  const sel = document.getElementById('caShowroomSelect');
+  sel.innerHTML = allShowrooms.map(s => `<option value="${s.id}">${s.name} (${s.phone})</option>`).join('');
+  openModal('modalCreateAuction');
+}
+
+async function submitCreateAuction(e) {
+  e.preventDefault();
+  const photosRaw = document.getElementById('caPhotos').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const body = {
+    showroom_id: document.getElementById('caShowroomSelect').value,
+    vehicle_model: document.getElementById('caModel').value,
+    rc_number: document.getElementById('caRc').value,
+    base_price: parseFloat(document.getElementById('caPrice').value),
+    manufacturing_year: parseInt(document.getElementById('caYear').value, 10)||2022,
+    km_driven: parseInt(document.getElementById('caKm').value, 10)||0,
+    duration_minutes: parseInt(document.getElementById('caDuration').value, 10)||10,
+    engine_sound_video: document.getElementById('caVideo').value.trim(),
+    photos: photosRaw,
+  };
+  const d = await apiFetch('/api/admin/auctions/create', { method: 'POST', body: JSON.stringify(body) });
+  if (d.success) {
+    toast(d.message, 'success');
+    closeModal('modalCreateAuction');
+    e.target.reset();
+    loadAuctions(); loadStats();
+  } else toast(d.error, 'error');
+}
+
+function openEditAuctionModal(id) {
+  const a = allAuctions.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('eaId').value = a.id;
+  document.getElementById('eaModel').value = a.vehicle_model;
+  document.getElementById('eaPrice').value = a.base_price;
+  document.getElementById('eaRc').value = a.rc_number;
+  document.getElementById('eaYear').value = a.manufacturing_year || 2022;
+  document.getElementById('eaKm').value = a.km_driven || 0;
+  document.getElementById('eaStatus').value = a.status;
+  openModal('modalEditAuction');
+}
+
+async function submitEditAuction(e) {
+  e.preventDefault();
+  const id = document.getElementById('eaId').value;
+  const body = {
+    vehicle_model: document.getElementById('eaModel').value,
+    base_price: parseFloat(document.getElementById('eaPrice').value),
+    rc_number: document.getElementById('eaRc').value,
+    manufacturing_year: parseInt(document.getElementById('eaYear').value, 10),
+    km_driven: parseInt(document.getElementById('eaKm').value, 10),
+    status: document.getElementById('eaStatus').value,
+  };
+  const d = await apiFetch(`/api/admin/auctions/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+  if (d.success) {
+    toast(d.message, 'success');
+    closeModal('modalEditAuction');
+    loadAuctions();
+  } else toast(d.error, 'error');
+}
+
+// ═══════════════════════════════════════════════════════
+// HANDOVERS & DELIVERY OVERRIDE
+// ═══════════════════════════════════════════════════════
+async function loadHandovers() {
+  const d = await apiFetch('/api/admin/handovers');
+  allHandovers = d.handovers || [];
+  const pendingPickup = allHandovers.filter(h => h.status === 'CLOSED').length;
+  const badge = document.getElementById('sidebarHandoverBadge');
+  if (pendingPickup > 0) { badge.textContent = pendingPickup; badge.style.display = 'inline-block'; }
+  else badge.style.display = 'none';
+  filterHandovers(document.getElementById('handoverSearch').value||'');
+}
+
+function filterHandovers(q) {
+  const statusFilter = document.getElementById('handoverStatusFilter').value;
+  const query = q.toLowerCase();
+  let list = allHandovers;
+  if (statusFilter !== 'ALL') list = list.filter(h => h.status === statusFilter);
+  if (query) list = list.filter(h => (h.vehicle_model||'').toLowerCase().includes(query) || (h.winner_name||'').toLowerCase().includes(query) || (h.rc_number||'').toLowerCase().includes(query));
+  const el = document.getElementById('handoversList');
+  if (!list.length) { el.innerHTML='<div style="text-align:center;color:#475569;padding:48px;font-size:12px">No handover deals found</div>'; return; }
+  el.innerHTML = list.map(h => {
+    const isCompleted = h.status === 'COMPLETED';
+    const waText = encodeURIComponent(`*ExchangeDesk Delivery Gate Pass*\nDeal: #${h.id} - ${h.vehicle_model}\nWinning Bid: ₹${h.final_bid.toLocaleString('en-IN')}\nShowroom: ${h.showroom_name}\nWinner: ${h.winner_name} (${h.winner_phone})\nPickup OTP: ${h.pickup_otp}\nStatus: ${h.status}`);
+    const waLink = `https://wa.me/?text=${waText}`;
+
+    return `
+    <div style="background:#0a111f;border:1px solid #1a2640;border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="flex:1;min-width:220px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:900;color:#fff">#${h.id} — ${h.vehicle_model}</span>
+            ${badgeHtml(h.status)}
+            <span class="otp-pill">🔑 OTP: ${h.pickup_otp || '—'}</span>
+          </div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">
+            🏢 Showroom: <span style="color:#e2e8f0;font-weight:600">${h.showroom_name}</span> (${h.showroom_phone}) | 📍 ${h.showroom_address||'—'}
+          </div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px">
+            🏆 Winner: <span style="color:#fbbf24;font-weight:700">${h.winner_name||'No Bidder'}</span> (📞 ${h.winner_phone||'--'}) | RC: <span style="color:#94a3b8;font-family:monospace">${h.rc_number}</span>
+          </div>
+          <div style="display:flex;gap:14px;margin-top:6px;flex-wrap:wrap">
+            <div style="font-size:11px"><span style="color:#64748b">Winning Bid: </span><span style="color:#34d399;font-weight:900">${inr(h.final_bid)}</span></div>
+            <div style="font-size:11px"><span style="color:#64748b">Winner Wallet: </span><span style="color:#a78bfa;font-weight:700">${inr(h.winner_wallet)}</span></div>
+            <div style="font-size:11px"><span style="color:#64748b">Ended: </span><span style="color:#94a3b8">${fmt(h.ends_at)}</span></div>
+          </div>
+        </div>
+        <div class="action-group" style="flex-shrink:0">
+          <a href="${waLink}" target="_blank" class="btn btn-green" style="text-decoration:none">💬 WhatsApp Slip</a>
+          ${!isCompleted ? `
+          <button onclick="forceHandover(${h.id},'${h.vehicle_model.replace(/'/g,"\\'")}',this)" class="btn btn-purple">⚡ Force Handover</button>
+          <button onclick="openDefaultPenalty(${h.id},'${h.vehicle_model.replace(/'/g,"\\'")}', '${(h.winner_name||'').replace(/'/g,"\\'")}')" class="btn btn-red">🚨 Penalty</button>
+          ` : `
+          <span style="font-size:11px;color:#38bdf8;font-weight:700">✓ Vehicle Delivered</span>
+          `}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function forceHandover(id, name, btn) {
+  if (!await confirmAction(`FORCE COMPLETE handover for "${name}" without showroom phone? ₹500 fee will be deducted and vehicle marked delivered.`)) return;
+  btn.disabled = true; btn.textContent = '...';
+  const d = await apiFetch(`/api/admin/auctions/${id}/force-handover`, { method: 'POST', body: JSON.stringify({ deductFee: true }) });
+  if (d.success) { toast(d.message, 'success'); loadHandovers(); loadStats(); }
+  else { toast(d.error, 'error'); btn.disabled=false; btn.textContent='⚡ Force Handover'; }
+}
+
+function openDefaultPenalty(id, bikeName, winnerName) {
+  document.getElementById('dpAuctionId').value = id;
+  document.getElementById('dpSubtitle').textContent = `Auction #${id} (${bikeName}) — Winner: ${winnerName}`;
+  openModal('modalDefaultPenalty');
+}
+
+async function submitDefaultPenalty(e) {
+  e.preventDefault();
+  const id = document.getElementById('dpAuctionId').value;
+  const penaltyAmount = parseFloat(document.getElementById('dpAmount').value);
+  const reason = document.getElementById('dpReason').value;
+  const d = await apiFetch(`/api/admin/auctions/${id}/default-penalty`, { method: 'POST', body: JSON.stringify({ penaltyAmount, reason }) });
+  if (d.success) {
+    toast(d.message, 'success');
+    closeModal('modalDefaultPenalty');
+    loadHandovers(); loadStats();
+  } else toast(d.error, 'error');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1090,14 +1581,11 @@ async function submitCreateShowroom(e) {
     phone: document.getElementById('csPhone').value,
     address: document.getElementById('csAddress').value
   };
-  // Create showroom first
   const d = await apiFetch('/api/admin/showrooms/create', { method:'POST', body: JSON.stringify(body) });
   if (d.success) {
-    // Reset PIN to custom value if provided
     if (pin !== '1234' && d.showroom) {
       await apiFetch(`/api/admin/showrooms/${d.showroom.id}/reset-pin`, { method:'POST', body: JSON.stringify({ newPin: pin }) });
     }
-    // Auto-approve
     if (d.showroom && !d.showroom.is_approved) {
       await apiFetch(`/api/admin/approve/showroom/${d.showroom.id}`, { method:'POST' });
     }
@@ -1113,18 +1601,18 @@ async function submitCreateShowroom(e) {
 // ═══════════════════════════════════════════════════════
 async function loadLedger() {
   const d = await apiFetch('/api/admin/transactions');
-  const list = d.transactions || [];
+  allLedger = d.transactions || [];
   const el = document.getElementById('ledgerList');
-  if (!list.length) { el.innerHTML='<div style="text-align:center;color:#475569;padding:48px;font-size:12px">No transactions yet</div>'; return; }
-  el.innerHTML = list.map(tx => `
+  if (!allLedger.length) { el.innerHTML='<div style="text-align:center;color:#475569;padding:48px;font-size:12px">No transactions yet</div>'; return; }
+  el.innerHTML = allLedger.map(tx => `
     <div class="tbl-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
       <div style="flex:1;min-width:180px">
-        <div style="font-size:12px;font-weight:700;color:#e2e8f0">${tx.vehicle_model||'—'} <span style="color:#475569;font-weight:400">#${tx.auction_id}</span></div>
-        <div style="font-size:10px;color:#64748b;margin-top:2px">${tx.buyer_name} | ${tx.showroom_name}</div>
-        <div style="font-size:10px;color:#475569;margin-top:1px">📅 ${fmt(tx.created_at)} | ${tx.fee_type}</div>
+        <div style="font-size:12px;font-weight:700;color:#e2e8f0">${tx.vehicle_model||'Deal Settlement'} <span style="color:#475569;font-weight:400">#${tx.auction_id||tx.id}</span></div>
+        <div style="font-size:10px;color:#64748b;margin-top:2px">${tx.buyer_name||'Buyer'} | ${tx.showroom_name||'Showroom'}</div>
+        <div style="font-size:10px;color:#475569;margin-top:1px">📅 ${fmt(tx.created_at)} | <span style="color:#a78bfa">${tx.fee_type}</span></div>
       </div>
       <div style="text-align:right;flex-shrink:0">
-        <div style="font-size:11px;color:#94a3b8">Deal: ${inr(tx.final_bid)}</div>
+        ${tx.final_bid ? `<div style="font-size:11px;color:#94a3b8">Deal: ${inr(tx.final_bid)}</div>` : ''}
         <div style="font-weight:900;color:#34d399">Fee: ${inr(tx.amount)}</div>
       </div>
     </div>`).join('');

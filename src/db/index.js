@@ -68,6 +68,14 @@ export async function initDatabase() {
       );
       CREATE INDEX IF NOT EXISTS idx_deposit_requests_status ON deposit_requests(status);
       CREATE INDEX IF NOT EXISTS idx_deposit_requests_buyer_id ON deposit_requests(buyer_id);
+
+      CREATE TABLE IF NOT EXISTS announcements (
+        id SERIAL PRIMARY KEY,
+        message TEXT NOT NULL,
+        type VARCHAR(20) DEFAULT 'info',
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     // Ensure platform_transactions.auction_id is nullable (to support wallet deposit transactions)

@@ -74,6 +74,18 @@ app.get(['/api/version', '/api/app/version', '/version'], (req, res) => {
   });
 });
 
+// Public Live Announcements Endpoint for Flutter App & Web Feed
+app.get(['/api/announcements/active', '/api/announcement'], async (req, res) => {
+  try {
+    const { query } = await import('./db/index.js');
+    const r = await query('SELECT message, type, created_at FROM announcements WHERE is_active = true ORDER BY created_at DESC LIMIT 1');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    return res.json({ success: true, announcement: r.rows[0] || null });
+  } catch (err) {
+    return res.json({ success: false, announcement: null });
+  }
+});
+
 // Dedicated Super Admin Portal Route
 app.get(['/admin', '/admin.html', '/admin/*'], (req, res) => {
   res.sendFile(path.resolve(__dirname, '../public/admin.html'));
